@@ -2,7 +2,7 @@
   "name": "BodyMind",
   "short_name": "BodyMind",
   "description": "Voice & photo nutrition logger powered by AI.",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

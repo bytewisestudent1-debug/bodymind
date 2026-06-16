@@ -237,7 +237,11 @@ app.use(express.json({ limit: '15mb' }))
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distPath = path.join(__dirname, '..', 'dist')
 const hasDist = fs.existsSync(distPath)
-if (hasDist) app.use(express.static(distPath))
+if (hasDist) {
+  // The root URL shows the download / install landing page; the actual app is at /app.
+  app.get('/', (req, res) => res.sendFile(path.join(distPath, 'download.html')))
+  app.use(express.static(distPath, { index: false }))
+}
 
 // ── Auth routes ──
 app.post('/auth/signup', async (req, res) => {

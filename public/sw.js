@@ -1,6 +1,6 @@
 // Minimal service worker — makes BodyMind installable and adds light offline caching.
-const CACHE = 'bodymind-v2'
-const SHELL = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest']
+const CACHE = 'bodymind-v3'
+const SHELL = ['/', '/app', '/index.html', '/icon.svg', '/manifest.webmanifest']
 // Backend routes — always hit the network, never serve a cached (stale) copy.
 const API_PATHS = ['/log', '/auth', '/profile', '/coach', '/plan', '/body-scan', '/weigh-in']
 
