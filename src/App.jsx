@@ -544,9 +544,14 @@ function App() {
       setTimeout(() => setToast(''), 4000)
     } catch (err) {
       console.error(err)
-      const limited = /429|quota|exhaust|limit/i.test(err.message || '')
-      setToast(limited ? 'Daily AI limit reached — try again later.' : 'Could not build a plan — is your profile set?')
-      setTimeout(() => setToast(''), 5000)
+      const m = err.message || ''
+      const msg = /429|quota|exhaust|limit|rate/i.test(m)
+        ? 'Daily AI limit reached — try again later.'
+        : /profile/i.test(m)
+          ? 'Your profile didn’t load — log out and back in, then try Auto-plan again.'
+          : m || 'Could not build a plan — try again.'
+      setToast(msg)
+      setTimeout(() => setToast(''), 6000)
     } finally {
       setPlanLoading(false)
     }

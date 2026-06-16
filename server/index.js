@@ -632,7 +632,8 @@ app.post('/plan', async (req, res) => {
     res.json({ plan, items, targets: t })
   } catch (err) {
     console.error('POST /plan failed:', err)
-    res.status(500).json({ error: 'Failed to make a plan' })
+    const quota = /429|quota|exhaust|RESOURCE_EXHAUSTED|rate/i.test(String(err.message || ''))
+    res.status(quota ? 429 : 500).json({ error: quota ? 'Daily AI limit reached — try again later.' : 'Failed to make a plan' })
   }
 })
 
