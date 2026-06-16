@@ -1,0 +1,30 @@
+# Render Blueprint — deploys BodyMind as ONE service (Express serves the API AND
+# the built React frontend) plus a free Postgres. See DEPLOY.md for the clicks.
+
+databases:
+  - name: bodymind-db
+    plan: free
+
+services:
+  - type: web
+    name: bodymind
+    runtime: node
+    plan: free
+    # Install frontend deps, build the React app (dist/), then install backend deps.
+    buildCommand: npm install --include=dev && npm run build && npm install --prefix server
+    # One server serves the API and the static frontend.
+    startCommand: node server/index.js
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bodymind-db
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false # paste your key in the Render dashboard
+      - key: GEMINI_MODEL
+        value: gemini-flash-lite-latest
+      - key: DB_SSL
+        value: "false" # Render's internal DB URL doesn't need SSL
+      - key: NODE_VERSION
+        value: "20"

@@ -1,0 +1,311 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Sora', 'Inter', ui-sans-serif, sans-serif;
+
+  /* Clean, de-neoned emerald — not neon. Remaps every green-* class. */
+  --color-green-300: #84c8a8;
+  --color-green-400: #57ad86;
+  --color-green-500: #2f9e6e;
+  --color-green-600: #25805b;
+  --color-green-700: #1e6648;
+}
+
+:root {
+  --bg: #0a0c10;
+  --accent: #2f9e6e;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: #e7eaee;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(47, 158, 110, 0.32);
+  color: #eafff1;
+}
+
+/* Slim, on-brand scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(47, 158, 110, 0.4);
+  background-clip: padding-box;
+}
+
+/* ── Premium dark background (every full screen) ── */
+.app-bg {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 65% at 50% -15%, rgba(47, 158, 110, 0.12), transparent 60%),
+    radial-gradient(60% 50% at 100% 0%, rgba(37, 128, 91, 0.07), transparent 55%),
+    radial-gradient(55% 45% at 0% 100%, rgba(30, 102, 72, 0.06), transparent 55%),
+    var(--bg);
+}
+/* fine film grain for depth */
+.app-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* slow-drifting aurora glow */
+.app-bg::after {
+  content: "";
+  position: fixed;
+  left: 50%;
+  top: -22%;
+  width: 80vw;
+  height: 60vh;
+  z-index: -1;
+  pointer-events: none;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgba(47, 158, 110, 0.08), transparent 70%);
+  filter: blur(30px);
+  animation: aurora 14s ease-in-out infinite;
+}
+@keyframes aurora {
+  0%, 100% { transform: translateX(-54%) translateY(0) scale(1); opacity: 0.9; }
+  50% { transform: translateX(-46%) translateY(14px) scale(1.08); opacity: 1; }
+}
+
+/* ── Glass card with hover lift ── */
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s, background-color 0.25s, box-shadow 0.25s;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(47, 158, 110, 0.3);
+  box-shadow: 0 16px 40px -20px rgba(0, 0, 0, 0.85);
+}
+
+/* ── Soft panel shadow (subtle on dark) ── */
+.shadow-soft {
+  box-shadow: 0 10px 34px -24px rgba(0, 0, 0, 0.85);
+}
+
+/* ── Gradient brand text ── */
+.text-brand {
+  background: linear-gradient(180deg, #ffffff 0%, #d7e8df 72%, #8fc4a8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Primary button: soft directional shadow, no neon bloom ── */
+.btn-glow {
+  box-shadow: 0 10px 26px -12px rgba(47, 158, 110, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.25s ease, background-color 0.2s ease;
+}
+.btn-glow:hover {
+  box-shadow: 0 14px 32px -12px rgba(47, 158, 110, 0.6);
+}
+.btn-glow:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+/* ── Thin progress-bar fill ── */
+.bar-fill {
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Expanding rings behind the mic button while listening */
+@keyframes ripple {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.ripple {
+  animation: ripple 1.8s ease-out infinite;
+}
+.ripple-delay {
+  animation-delay: 0.9s;
+}
+
+/* Roaming buff coach mascot */
+.roaming-coach {
+  position: fixed;
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  left: 1rem;
+  z-index: 40;
+  width: 104px;
+  height: 146px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  will-change: transform, top, left;
+}
+/* Thrown across the screen — tumbles head-over-heels while it falls */
+.roaming-coach.rc-falling {
+  cursor: grabbing;
+  animation: rc-tumble 0.6s linear infinite;
+}
+/* Carries a dumbbell, but sets it down to do bodyweight/bar workouts */
+.rc-weapon-db { opacity: 1; transition: opacity 0.2s; }
+.roaming-coach.rc-pushup .rc-weapon-db,
+.roaming-coach.rc-pullup .rc-weapon-db,
+.roaming-coach.rc-lift .rc-weapon-db { opacity: 0; }
+/* When you get close, he winds up and swings the dumbbell at you */
+.roaming-coach.rc-swinging .rc-figure {
+  animation: rc-swing 0.5s ease-in-out infinite;
+}
+.roaming-coach.rc-swinging .rc-aura {
+  animation-duration: 0.55s;
+}
+
+/* black power aura */
+.rc-aura {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: 150%;
+  height: 150%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(47, 158, 110, 0.28), rgba(47, 158, 110, 0.12) 55%, transparent 72%);
+  filter: blur(3px);
+  z-index: -1;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: rc-aura 1.6s ease-in-out infinite;
+}
+
+.rc-face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: rc-face 36s steps(1) infinite;
+}
+.rc-bob {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 6px 9px rgba(0, 0, 0, 0.5));
+}
+
+/* The body group animates; the bar/barbell stay where they belong */
+.rc-figure {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  animation: rc-bob 0.7s ease-in-out infinite;
+}
+.roaming-coach.rc-pushup .rc-figure { animation: rc-pushup 0.6s ease-in-out infinite; }
+.roaming-coach.rc-pullup .rc-figure { animation: rc-pullup 0.85s ease-in-out infinite; }
+.roaming-coach.rc-lift .rc-figure { animation: rc-lift 0.75s ease-in-out infinite; }
+
+.rc-bar,
+.rc-barbell { opacity: 0; transition: opacity 0.2s; }
+.roaming-coach.rc-pullup .rc-bar { opacity: 1; }
+.roaming-coach.rc-lift .rc-barbell { opacity: 1; }
+
+.rc-tip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  background: #14171d;
+  color: #a7d9c1;
+  border: 1px solid rgba(47, 158, 110, 0.3);
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.roaming-coach:hover .rc-tip { opacity: 1; }
+
+@keyframes rc-tumble {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+/* baseball-bat style swing of the whole body (and the dumbbell with it) */
+@keyframes rc-swing {
+  0%   { transform: rotate(-18deg) translateX(-3px); }
+  40%  { transform: rotate(20deg) translateX(5px); }
+  55%  { transform: rotate(24deg) translateX(6px); }
+  100% { transform: rotate(-18deg) translateX(-3px); }
+}
+@keyframes rc-face {
+  0%, 49.9% { transform: scaleX(1); }
+  50%, 100% { transform: scaleX(-1); }
+}
+@keyframes rc-bob {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-5px) rotate(1.5deg); }
+}
+/* push-up: dip down low to the floor and back up */
+@keyframes rc-pushup {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(9px) scaleY(0.78); }
+}
+/* pull-up: rise up toward the bar and back down */
+@keyframes rc-pullup {
+  0%, 100% { transform: translateY(9px); }
+  50% { transform: translateY(-5px); }
+}
+/* lift: squat down with the barbell and stand up */
+@keyframes rc-lift {
+  0%, 100% { transform: translateY(8px) scaleY(0.86); }
+  50% { transform: translateY(0) scaleY(1); }
+}
+@keyframes rc-aura {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.13); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roaming-coach, .rc-face, .rc-bob, .rc-figure, .rc-aura { animation: none; }
+}

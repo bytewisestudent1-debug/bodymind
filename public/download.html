@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>BodyMind — Download the voice-first nutrition coach</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f5e3f" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #101a14; --bg: #f5f6f3; --card: #ffffff; --muted: #5c6b60;
+        --green: #1c8a5f; --green-2: #5cba93; --green-deep: #0f5e3f; --amber: #d99a3a;
+        --line: rgba(16, 26, 20, 0.1);
+        --serif: "Fraunces", Georgia, serif;
+        --sans: "Hanken Grotesk", system-ui, sans-serif;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+      body { font-family: var(--sans); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+      a { color: inherit; text-decoration: none; }
+      .grain {
+        position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.4; mix-blend-mode: overlay;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+      }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+      /* ── reveal animation ── */
+      @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+      .reveal { opacity: 0; animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+      .d1 { animation-delay: 0.05s; } .d2 { animation-delay: 0.15s; } .d3 { animation-delay: 0.25s; }
+      .d4 { animation-delay: 0.35s; } .d5 { animation-delay: 0.5s; }
+      @keyframes float { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-12px) rotate(-1deg); } }
+
+      /* ── nav ── */
+      nav { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); background: rgba(246, 244, 236, 0.7); border-bottom: 1px solid var(--line); }
+      .nav-in { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+      .brand { display: flex; align-items: center; gap: 0.55rem; font-weight: 600; font-size: 1.05rem; letter-spacing: -0.01em; }
+      .brand img { width: 28px; height: 28px; border-radius: 8px; }
+      .nav-links { display: none; gap: 2rem; font-size: 0.92rem; color: var(--muted); }
+      @media (min-width: 760px) { .nav-links { display: flex; } }
+      .nav-links a:hover { color: var(--ink); }
+      .nav-cta { background: var(--ink); color: #fff; padding: 0.55rem 1.1rem; border-radius: 999px; font-size: 0.88rem; font-weight: 600; }
+      .nav-cta:hover { background: var(--green-deep); }
+
+      /* ── hero ── */
+      .hero { position: relative; color: #fdfdf8; padding: 5.5rem 0 14rem; overflow: hidden;
+        background:
+          radial-gradient(48% 60% at 86% -8%, rgba(217, 154, 58, 0.26), transparent 58%),
+          radial-gradient(55% 65% at 8% 4%, rgba(70, 170, 125, 0.4), transparent 60%),
+          linear-gradient(160deg, #1c8a5f 0%, #15714c 45%, #0d4f37 100%);
+      }
+      .hero::after { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 80% at 50% 120%, rgba(8, 48, 30, 0.5), transparent 60%); }
+      .hero-in { position: relative; z-index: 2; text-align: center; max-width: 760px; margin: 0 auto; }
+      .eyebrow { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em;
+        background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28); padding: 0.4rem 0.9rem; border-radius: 999px; backdrop-filter: blur(6px); }
+      .eyebrow b { color: #ffd98a; }
+      h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(2.7rem, 7vw, 4.8rem); line-height: 1.02; letter-spacing: -0.02em; margin: 1.6rem 0 0; }
+      h1 em { font-style: italic; color: #d9ffe7; }
+      .lede { font-size: clamp(1.05rem, 2.2vw, 1.25rem); line-height: 1.55; color: rgba(255, 255, 255, 0.88); max-width: 33rem; margin: 1.4rem auto 0; }
+      .cta-row { display: flex; flex-wrap: wrap; gap: 0.8rem; justify-content: center; margin-top: 2.1rem; }
+      .btn-primary { display: inline-flex; align-items: center; gap: 0.6rem; background: #fff; color: var(--green-deep); font-weight: 700; font-size: 1rem;
+        padding: 0.95rem 1.7rem; border-radius: 14px; border: none; cursor: pointer; box-shadow: 0 14px 40px rgba(4, 40, 20, 0.4); transition: transform 0.15s, box-shadow 0.15s; }
+      .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 20px 54px rgba(4, 40, 20, 0.55); }
+      .btn-primary svg { width: 19px; height: 19px; }
+      .btn-ghost { display: inline-flex; align-items: center; gap: 0.45rem; color: #fff; font-weight: 600; font-size: 0.98rem; padding: 0.95rem 1.3rem; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.35); }
+      .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+      .trust { margin-top: 1.3rem; font-size: 0.82rem; color: rgba(255, 255, 255, 0.78); }
+
+      /* hero mockup pulled up over the next section */
+      .hero-shot { position: relative; z-index: 3; max-width: 980px; margin: -10rem auto 0; padding: 0 1.5rem; }
+
+      /* ── app window mockup ── */
+      .window { border-radius: 18px; overflow: hidden; background: #0a0c0b; border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 40px 100px rgba(6, 26, 16, 0.4), 0 0 50px rgba(47, 158, 110, 0.1); }
+      .titlebar { display: flex; align-items: center; gap: 0.45rem; padding: 0.8rem 1rem; background: #111312; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+      .dot { width: 11px; height: 11px; border-radius: 50%; }
+      .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+      .titlebar .url { margin-left: auto; margin-right: auto; font-size: 0.72rem; color: #6b7280; background: #0a0c0b; border: 1px solid rgba(255,255,255,.06); padding: 0.2rem 0.9rem; border-radius: 999px; }
+      .app {
+        display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 0.9rem; padding: 1.1rem; min-height: 360px; color: #fff;
+        background: radial-gradient(90% 45% at 50% 0%, rgba(47, 158, 110, 0.14), transparent 55%), #0a0c0b;
+      }
+      @media (max-width: 680px) { .app { grid-template-columns: 1fr; } .app .side { display: none; } }
+      .pane { border: 1px solid rgba(255, 255, 255, 0.07); background: rgba(255, 255, 255, 0.03); border-radius: 14px; padding: 0.9rem; }
+      .pane-label { font-size: 0.58rem; letter-spacing: 0.22em; text-transform: uppercase; color: #6b7280; }
+      .logcard { border: 1px solid rgba(255, 255, 255, 0.07); background: rgba(255, 255, 255, 0.03); border-radius: 11px; padding: 0.6rem 0.7rem; margin-top: 0.6rem; }
+      .logcard .t { font-size: 0.5rem; letter-spacing: 0.1em; color: #6b7280; }
+      .logcard .m { font-size: 0.68rem; margin: 0.2rem 0 0.4rem; }
+      .chips { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+      .chip { font-size: 0.5rem; color: #a7d9c1; background: rgba(47, 158, 110, 0.12); border: 1px solid rgba(47, 158, 110, 0.25); border-radius: 999px; padding: 0.12rem 0.4rem; }
+      .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0.8rem; }
+      .brandmini { font-size: 0.6rem; letter-spacing: 0.28em; color: #e5e7eb; display: flex; align-items: center; gap: 0.35rem; }
+      .brandmini i { width: 6px; height: 6px; border-radius: 50%; background: var(--green-2); box-shadow: 0 0 8px var(--green-2); }
+      .mic { width: 92px; height: 92px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(160deg, #3fa985, #16714c); box-shadow: 0 14px 38px -12px rgba(47, 158, 110, 0.5); }
+      .mic svg { width: 34px; height: 34px; color: #eafff4; }
+      .center .hint { font-size: 0.62rem; color: #9ca3af; }
+      .scanzone { flex: 1; border: 1.5px dashed rgba(47, 158, 110, 0.4); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 0.6rem; color: #a7d9c1; }
+      .scanzone svg { width: 22px; height: 22px; }
+      .scanzone span { font-size: 0.58rem; color: #9ca3af; }
+      .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem; }
+      .stat { border: 1px solid rgba(255, 255, 255, 0.07); background: rgba(255, 255, 255, 0.03); border-radius: 10px; padding: 0.5rem; }
+      .stat b { font-size: 0.85rem; } .stat span { font-size: 0.5rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; display: block; }
+
+      /* ── sections ── */
+      section.block { padding: 5.5rem 0; }
+      .kicker { font-family: var(--serif); font-style: italic; color: var(--green); font-size: 1.05rem; }
+      h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(2rem, 4.5vw, 3rem); line-height: 1.08; letter-spacing: -0.02em; margin-top: 0.4rem; }
+      .section-lead { color: var(--muted); font-size: 1.05rem; max-width: 34rem; margin-top: 0.9rem; line-height: 1.55; }
+      .head-center { text-align: center; } .head-center .section-lead { margin-left: auto; margin-right: auto; }
+
+      /* how-it-works two cards */
+      .duo { display: grid; grid-template-columns: 1fr; gap: 1.2rem; margin-top: 2.6rem; }
+      @media (min-width: 820px) { .duo { grid-template-columns: 1.05fr 0.95fr; } }
+      .feature { border-radius: 24px; padding: 2rem; border: 1px solid var(--line); }
+      .feature.dark { background: linear-gradient(160deg, #16714c, #0d4f37); color: #fff; border: none; box-shadow: 0 30px 70px rgba(8, 48, 30, 0.22); }
+      .feature.light { background: var(--card); }
+      .feature h3 { font-family: var(--serif); font-weight: 500; font-size: 1.6rem; letter-spacing: -0.01em; }
+      .feature p { margin-top: 0.6rem; font-size: 0.98rem; line-height: 1.55; opacity: 0.92; }
+      .feature.light p { color: var(--muted); }
+      .mini { margin-top: 1.6rem; border-radius: 14px; background: #0a0c0b; border: 1px solid rgba(255, 255, 255, 0.08); padding: 1.1rem; display: flex; align-items: center; justify-content: center; gap: 0.9rem; min-height: 140px; }
+
+      /* trio */
+      .trio { display: grid; grid-template-columns: 1fr; gap: 1.2rem; margin-top: 2.6rem; }
+      @media (min-width: 760px) { .trio { grid-template-columns: repeat(3, 1fr); } }
+      .tcard { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 1.6rem; transition: transform 0.18s, box-shadow 0.18s; }
+      .tcard:hover { transform: translateY(-4px); box-shadow: 0 24px 50px rgba(12, 26, 18, 0.1); }
+      .tcard .ic { width: 46px; height: 46px; border-radius: 13px; background: rgba(47, 158, 110, 0.12); color: var(--green); display: flex; align-items: center; justify-content: center; }
+      .tcard .ic svg { width: 22px; height: 22px; }
+      .tcard h4 { font-family: var(--serif); font-weight: 500; font-size: 1.25rem; margin-top: 1rem; }
+      .tcard p { color: var(--muted); font-size: 0.93rem; line-height: 1.5; margin-top: 0.45rem; }
+
+      /* stats band */
+      .stats-band { background: var(--ink); color: #fff; border-radius: 28px; padding: 3rem 2rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; text-align: center; }
+      @media (max-width: 640px) { .stats-band { grid-template-columns: 1fr; gap: 2rem; } }
+      .stats-band .n { font-family: var(--serif); font-size: clamp(2.4rem, 6vw, 3.4rem); color: var(--green-2); line-height: 1; }
+      .stats-band .l { color: rgba(255, 255, 255, 0.65); margin-top: 0.5rem; font-size: 0.95rem; }
+
+      /* platform cards */
+      .platforms { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2.6rem; }
+      @media (min-width: 760px) { .platforms { grid-template-columns: repeat(4, 1fr); } }
+      .pcard { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 1.6rem 1.1rem 1.3rem; text-align: center; transition: transform 0.15s, box-shadow 0.18s, border-color 0.2s; }
+      .pcard:hover { transform: translateY(-4px); border-color: rgba(21, 163, 74, 0.4); box-shadow: 0 22px 48px rgba(12, 26, 18, 0.1); }
+      .pglyph { width: 44px; height: 44px; margin: 0 auto 0.8rem; color: var(--ink); }
+      .pglyph svg { width: 100%; height: 100%; }
+      .pname { font-weight: 600; } .pkind { font-size: 0.74rem; color: var(--muted); margin-top: 0.1rem; }
+      .pdl { margin-top: 1.1rem; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; background: var(--green); color: #fff; border: none;
+        border-radius: 999px; padding: 0.65rem; font-size: 0.86rem; font-weight: 700; cursor: pointer; font-family: var(--sans); transition: background 0.2s, transform 0.12s; }
+      .pdl:hover { background: var(--green-deep); transform: translateY(-1px); }
+      .pdl svg { width: 14px; height: 14px; }
+      .toast { text-align: center; color: var(--green-deep); font-weight: 600; margin-top: 1.2rem; min-height: 1.2rem; }
+
+      /* FAQ */
+      .faq { max-width: 760px; margin: 2.4rem auto 0; }
+      details { border-bottom: 1px solid var(--line); padding: 1.2rem 0; }
+      summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none; font-weight: 600; font-size: 1.08rem; }
+      summary::-webkit-details-marker { display: none; }
+      summary .pm { color: var(--green); font-size: 1.5rem; transition: transform 0.2s; line-height: 1; }
+      details[open] summary .pm { transform: rotate(45deg); }
+      details p { color: var(--muted); line-height: 1.6; margin-top: 0.8rem; max-width: 60ch; }
+
+      /* footer CTA */
+      .cta-band { position: relative; overflow: hidden; color: #fff; border-radius: 32px; padding: 4.5rem 2rem; text-align: center;
+        background: radial-gradient(60% 80% at 80% 10%, rgba(217, 154, 58, 0.24), transparent 60%), linear-gradient(160deg, #1c8a5f, #0d4f37); }
+      .cta-band h2 { color: #fff; } .cta-band .section-lead { color: rgba(255, 255, 255, 0.85); margin: 0.9rem auto 1.8rem; }
+
+      footer { padding: 3.5rem 0 2.5rem; }
+      .foot-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
+      @media (min-width: 680px) { .foot-grid { grid-template-columns: 2fr 1fr 1fr 1fr; } }
+      .foot-grid h5 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 0.9rem; }
+      .foot-grid a { display: block; color: var(--ink); font-size: 0.92rem; padding: 0.28rem 0; opacity: 0.8; }
+      .foot-grid a:hover { opacity: 1; color: var(--green); }
+      .foot-bottom { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; color: var(--muted); font-size: 0.82rem; }
+      .opdot { display: inline-flex; align-items: center; gap: 0.4rem; }
+      .opdot i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+      /* modal */
+      .overlay { position: fixed; inset: 0; z-index: 100; background: rgba(8, 18, 12, 0.55); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+      .overlay.show { display: flex; }
+      .modal { background: var(--card); border-radius: 22px; padding: 2rem; max-width: 420px; width: 100%; box-shadow: 0 40px 90px rgba(0, 0, 0, 0.3); animation: rise 0.3s ease; }
+      .modal-head { display: flex; align-items: center; gap: 0.7rem; }
+      .modal-head .pg { width: 38px; height: 38px; color: var(--ink); }
+      .modal-head h3 { font-family: var(--serif); font-weight: 500; font-size: 1.3rem; }
+      .modal .steps { list-style: none; counter-reset: s; margin-top: 1.3rem; display: flex; flex-direction: column; gap: 0.8rem; }
+      .modal .steps li { counter-increment: s; position: relative; padding-left: 2.5rem; color: var(--ink); font-size: 0.94rem; line-height: 1.5; }
+      .modal .steps li::before { content: counter(s); position: absolute; left: 0; top: -2px; width: 1.8rem; height: 1.8rem; border-radius: 50%; background: rgba(47, 158, 110, 0.12); color: var(--green); border: 1px solid rgba(47, 158, 110, 0.4); font-weight: 700; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; }
+      .modal .steps b { font-weight: 700; }
+      .modal-close { margin-top: 1.6rem; width: 100%; background: var(--ink); color: #fff; border: none; border-radius: 12px; padding: 0.85rem; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+    </style>
+  </head>
+  <body>
+    <div class="grain"></div>
+
+    <nav>
+      <div class="wrap nav-in">
+        <div class="brand"><img src="/icon.svg" alt="" /> BodyMind</div>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#get">Download</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:.85rem">
+          <a href="/?mode=login" style="color:var(--ink);font-size:.88rem;font-weight:600;border:1.5px solid var(--ink);border-radius:999px;padding:.5rem 1.1rem">Log in</a>
+          <a href="/?mode=signup" class="nav-cta">Sign up</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="wrap hero-in">
+        <span class="eyebrow reveal d1">🟢 Free · Voice-first nutrition</span>
+        <h1 class="reveal d2">Just say what<br />you ate. <em>That's it.</em></h1>
+        <p class="lede reveal d3">
+          BodyMind turns a sentence, a photo, or a voice note into instant calories
+          and protein — your AI nutrition coach, on every device.
+        </p>
+        <div class="cta-row reveal d4">
+          <button class="btn-primary" id="heroBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4" /><path d="M5 21h14" /></svg>
+            <span id="heroLabel">Download</span>
+          </button>
+          <a href="/?mode=signup" class="btn-ghost">Sign up — use in browser →</a>
+        </div>
+        <p class="trust reveal d4">Works on Windows · macOS · Android · iPhone</p>
+      </div>
+    </header>
+
+    <!-- HERO MOCKUP -->
+    <div class="hero-shot reveal d5">
+      <div class="window">
+        <div class="titlebar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="url">bodymind.app</span>
+        </div>
+        <div class="app">
+          <div class="pane side">
+            <div class="pane-label">Today's log</div>
+            <div class="totals">
+              <div class="stat"><b>1,240</b><span>cal</span></div>
+              <div class="stat"><b>82g</b><span>protein</span></div>
+            </div>
+            <div class="logcard"><div class="t">9:24 AM</div><div class="m">Two eggs &amp; toast</div><div class="chips"><span class="chip">200 cal</span><span class="chip">14g</span></div></div>
+            <div class="logcard"><div class="t">12:40 PM</div><div class="m">Chicken salad bowl</div><div class="chips"><span class="chip">430 cal</span><span class="chip">38g</span></div></div>
+          </div>
+          <div class="pane center">
+            <div class="brandmini"><i></i> BODYMIND</div>
+            <div class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /></svg></div>
+            <div class="hint">"I had a chicken salad bowl"</div>
+            <div class="chips"><span class="chip">430 cal · 38g protein</span></div>
+          </div>
+          <div class="pane side">
+            <div class="pane-label">Scan</div>
+            <div class="scanzone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+              <span>Drop a food photo</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <section class="block" id="how">
+      <div class="wrap">
+        <div class="head-center">
+          <span class="kicker">how it works</span>
+          <h2>Logging a meal in one breath</h2>
+          <p class="section-lead">No searching databases, no tapping through menus. Tell BodyMind what you ate — it does the math.</p>
+        </div>
+        <div class="duo">
+          <div class="feature dark reveal d1">
+            <h3>Speak it</h3>
+            <p>Tap the mic and say it like you'd tell a friend. BodyMind transcribes live and logs it the moment you stop.</p>
+            <div class="mini">
+              <div class="mic" style="width:64px;height:64px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /></svg></div>
+              <div class="chips"><span class="chip">listening…</span></div>
+            </div>
+          </div>
+          <div class="feature light reveal d2">
+            <h3>Snap it</h3>
+            <p>Not sure what's in it? Upload a photo or a menu PDF — the AI identifies the food and estimates the numbers.</p>
+            <div class="mini">
+              <div class="scanzone" style="width:100%;height:90px;margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="#a7d9c1" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4z" /><circle cx="12" cy="13" r="3.5" /></svg><span>tap to scan</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEMO VIDEO (auto-playing animation) -->
+    <section class="block" id="demo" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+      <style>
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+        @keyframes dvfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes dvripple { 0% { transform: scale(0.9); opacity: 0.55; } 100% { transform: scale(1.85); opacity: 0; } }
+        .dv-app { background: radial-gradient(90% 38% at 50% 0%, rgba(47, 158, 110, 0.14), transparent 55%), #08090a; min-height: 460px; color: #fff; display: grid; grid-template-rows: auto 1fr auto; padding: 1.5rem 1.5rem 0; }
+        .dv-brand { text-align: center; font-size: 0.62rem; letter-spacing: 0.3em; color: #e5e7eb; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+        .dv-brand i { width: 6px; height: 6px; border-radius: 50%; background: #5cba93; box-shadow: 0 0 8px #5cba93; }
+        .dv-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; text-align: center; }
+        .dv-mic { position: relative; width: 96px; height: 96px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(47, 158, 110, 0.5); background: rgba(255, 255, 255, 0.03); box-shadow: 0 0 45px rgba(47, 158, 110, 0.3); transition: all 0.3s; }
+        .dv-mic.live { background: linear-gradient(160deg, #3fa985, #16714c); border-color: transparent; box-shadow: 0 0 42px 2px rgba(47, 158, 110, 0.35); }
+        .dv-mic svg { width: 34px; height: 34px; color: #a7d9c1; z-index: 1; }
+        .dv-mic.live svg { color: #eafff4; }
+        .dv-ring { position: absolute; inset: 0; border-radius: 50%; background: rgba(47, 158, 110, 0.25); display: none; }
+        .dv-mic.live .dv-ring { display: block; animation: dvripple 1.5s ease-out infinite; }
+        .dv-status { font-size: 0.95rem; color: #d1d5db; min-height: 1.4rem; max-width: 24rem; }
+        .dv-cursor { display: inline-block; width: 2px; height: 1em; background: #a7d9c1; margin-left: 1px; vertical-align: -2px; animation: pulse 1s infinite; }
+        .dv-reply { color: #a7d9c1; font-size: 0.9rem; max-width: 24rem; min-height: 1.1rem; line-height: 1.5; }
+        .dv-chips { display: flex; gap: 0.4rem; justify-content: center; flex-wrap: wrap; min-height: 1.4rem; }
+        .dv-chip { font-size: 0.64rem; color: #a7d9c1; background: rgba(47, 158, 110, 0.12); border: 1px solid rgba(47, 158, 110, 0.25); border-radius: 999px; padding: 0.2rem 0.6rem; }
+        .dv-bottom { border-top: 1px solid rgba(255, 255, 255, 0.06); margin-top: 1.2rem; padding: 0.9rem 0 1.2rem; display: flex; gap: 1rem; align-items: center; }
+        .dv-totals { display: flex; gap: 1.4rem; }
+        .dv-tot b { font-size: 1.15rem; color: #fff; } .dv-tot span { font-size: 0.55rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.1em; display: block; }
+        .dv-log { flex: 1; display: flex; gap: 0.5rem; justify-content: flex-end; overflow: hidden; }
+        .dv-card { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 0.4rem 0.65rem; font-size: 0.62rem; color: #d1d5db; white-space: nowrap; animation: dvfade 0.4s ease; }
+        .dv-timeline { height: 3px; background: rgba(255, 255, 255, 0.08); }
+        .dv-progress { height: 100%; width: 0; background: linear-gradient(90deg, #5cba93, #2f9e6e); transition: width 0.4s ease; }
+        .dv-rec { display: inline-flex; align-items: center; gap: 6px; font-size: 0.62rem; color: #ff5f57; font-weight: 700; letter-spacing: 0.12em; }
+        .dv-rec i { width: 7px; height: 7px; border-radius: 50%; background: #ff5f57; animation: pulse 1.2s infinite; }
+      </style>
+
+      <div class="wrap head-center">
+        <span class="kicker">watch the demo</span>
+        <h2>See BodyMind in action</h2>
+        <p class="section-lead">Say a meal, get instant calories &amp; protein. Here's the whole flow.</p>
+      </div>
+
+      <div class="wrap" style="margin-top:2.4rem;max-width:820px">
+        <div class="window">
+          <div class="titlebar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url">bodymind.app</span>
+            <span class="dv-rec"><i></i> DEMO</span>
+          </div>
+          <div class="dv-app">
+            <div class="dv-brand"><i></i> BODYMIND</div>
+            <div class="dv-center">
+              <div class="dv-mic" id="dvMic">
+                <span class="dv-ring"></span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /></svg>
+              </div>
+              <div class="dv-status" id="dvStatus">Tap to speak your meal</div>
+              <div class="dv-reply" id="dvReply"></div>
+              <div class="dv-chips" id="dvChips"></div>
+            </div>
+            <div class="dv-bottom">
+              <div class="dv-totals">
+                <div class="dv-tot"><b id="dvCal">0</b><span>calories</span></div>
+                <div class="dv-tot"><b id="dvPro">0g</b><span>protein</span></div>
+              </div>
+              <div class="dv-log" id="dvLog"></div>
+            </div>
+          </div>
+          <div class="dv-timeline"><div class="dv-progress" id="dvProg"></div></div>
+        </div>
+        <p style="text-align:center;margin-top:1.2rem">
+          <a href="/?mode=signup" style="color:var(--green-deep);font-weight:600;border-bottom:1px dashed rgba(21,163,74,.4);padding-bottom:1px">Sign up to use it →</a>
+        </p>
+      </div>
+
+      <script>
+        (function () {
+          const mic = document.getElementById('dvMic')
+          const status = document.getElementById('dvStatus')
+          const reply = document.getElementById('dvReply')
+          const chips = document.getElementById('dvChips')
+          const logEl = document.getElementById('dvLog')
+          const calEl = document.getElementById('dvCal')
+          const proEl = document.getElementById('dvPro')
+          const prog = document.getElementById('dvProg')
+          if (!mic) return
+
+          const meals = [
+            { say: 'I had a chicken salad bowl', reply: 'Fresh and protein-packed — great choice!', cal: 430, pro: 38, short: '🥗 Chicken salad' },
+            { say: 'two eggs and toast', reply: 'A solid, balanced breakfast to start the day.', cal: 200, pro: 14, short: '🍳 Eggs & toast' },
+            { say: 'a banana with peanut butter', reply: 'Perfect pre-workout fuel.', cal: 290, pro: 8, short: '🍌 Banana + PB' },
+          ]
+          const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+          let totCal = 0, totPro = 0
+
+          async function type(el, txt) {
+            el.innerHTML = ''
+            for (let i = 0; i < txt.length; i++) {
+              el.textContent = txt.slice(0, i + 1)
+              await sleep(42)
+            }
+          }
+          async function countUp(el, from, to, suffix) {
+            for (let i = 1; i <= 12; i++) { el.textContent = Math.round(from + (to - from) * (i / 12)) + suffix; await sleep(22) }
+          }
+
+          async function run() {
+            for (let m = 0; m < meals.length; m++) {
+              const meal = meals[m]
+              reply.textContent = ''; chips.innerHTML = ''
+              mic.classList.add('live')
+              status.innerHTML = 'Listening… <span class="dv-cursor"></span>'
+              await sleep(650)
+              await type(status, '“' + meal.say + '”')
+              await sleep(450)
+              mic.classList.remove('live')
+              status.textContent = 'Analyzing…'
+              await sleep(950)
+              status.textContent = 'Logged ✓'
+              reply.style.animation = 'none'; void reply.offsetWidth; reply.style.animation = 'dvfade .4s ease'
+              reply.textContent = meal.reply
+              chips.innerHTML = '<span class="dv-chip">🔥 ' + meal.cal + ' cal</span><span class="dv-chip">💪 ' + meal.pro + 'g protein</span>'
+              const card = document.createElement('div'); card.className = 'dv-card'; card.textContent = meal.short
+              logEl.prepend(card); while (logEl.children.length > 2) logEl.removeChild(logEl.lastChild)
+              await countUp(calEl, totCal, totCal + meal.cal, ''); totCal += meal.cal
+              await countUp(proEl, totPro, totPro + meal.pro, 'g'); totPro += meal.pro
+              prog.style.width = Math.round(((m + 1) / meals.length) * 100) + '%'
+              await sleep(1700)
+            }
+            await sleep(700)
+            totCal = 0; totPro = 0; calEl.textContent = '0'; proEl.textContent = '0g'
+            logEl.innerHTML = ''; reply.textContent = ''; chips.innerHTML = ''
+            status.textContent = 'Tap to speak your meal'; prog.style.width = '0%'
+            await sleep(700)
+            run()
+          }
+          run()
+        })()
+      </script>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="block" id="features" style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+      <div class="wrap">
+        <div class="head-center">
+          <span class="kicker">why it's different</span>
+          <h2>Built around how you actually eat</h2>
+        </div>
+        <div class="trio">
+          <div class="tcard reveal d1">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0" /><path d="M12 18v3" /></svg></div>
+            <h4>Voice-first</h4>
+            <p>Hands messy from cooking? Just talk. Real-time transcription means logging takes seconds, not minutes.</p>
+          </div>
+          <div class="tcard reveal d2">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-4z" /><circle cx="12" cy="13" r="3.5" /></svg></div>
+            <h4>Photo &amp; document scan</h4>
+            <p>Snap your plate or a restaurant menu. The AI reads the image and estimates calories &amp; protein instantly.</p>
+          </div>
+          <div class="tcard reveal d3">
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18" /><path d="M7 14l4-4 3 3 5-6" /></svg></div>
+            <h4>Live daily totals</h4>
+            <p>Calories and protein add up automatically as you go, so you always know where your day stands.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="block">
+      <div class="wrap">
+        <div class="stats-band reveal d1">
+          <div><div class="n">3</div><div class="l">ways to log — voice, photo, text</div></div>
+          <div><div class="n">~2s</div><div class="l">to an AI nutrition estimate</div></div>
+          <div><div class="n">100%</div><div class="l">free — your key stays private</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOWNLOAD -->
+    <section class="block" id="get" style="background:#fff;border-top:1px solid var(--line)">
+      <div class="wrap">
+        <div class="head-center">
+          <span class="kicker">get bodymind</span>
+          <h2>Download for your device</h2>
+          <p class="section-lead">One app, every platform — installs straight from the browser, no app store.</p>
+        </div>
+        <div class="platforms" id="platforms"></div>
+        <p class="toast" id="toast"></p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="block" id="faq">
+      <div class="wrap">
+        <div class="head-center"><span class="kicker">questions</span><h2>Good to know</h2></div>
+        <div class="faq">
+          <details open><summary>Is BodyMind free?<span class="pm">+</span></summary><p>Yes. BodyMind runs on a free AI model, and there's no app-store fee — you install it straight from this page.</p></details>
+          <details><summary>How does it estimate calories?<span class="pm">+</span></summary><p>Your meal — spoken, typed, or photographed — is sent to an AI nutrition model that returns a friendly summary with an estimated calorie and protein count. Estimates, not lab measurements, but great for everyday tracking.</p></details>
+          <details><summary>Which devices can I install it on?<span class="pm">+</span></summary><p>Windows, macOS, Android, and iPhone/iPad. It installs as a real app with its own icon — no app store required.</p></details>
+          <details><summary>Does the voice input need anything special?<span class="pm">+</span></summary><p>Voice logging uses your browser's speech recognition, which works best in Chrome or Edge. You can always type or upload a photo instead.</p></details>
+          <details><summary>Is my data private?<span class="pm">+</span></summary><p>Your meals are stored in your own database, and the AI key lives on the server — it's never shipped to the browser.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA BAND -->
+    <section class="block">
+      <div class="wrap">
+        <div class="cta-band reveal d1">
+          <span class="kicker" style="color:#d9ffe7">start today</span>
+          <h2>Eat smarter, with one sentence.</h2>
+          <p class="section-lead">Install BodyMind and log your next meal in seconds.</p>
+          <button class="btn-primary" id="ctaBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4" /><path d="M5 21h14" /></svg>
+            <span id="ctaLabel">Download</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="wrap">
+        <div class="foot-grid">
+          <div>
+            <div class="brand" style="margin-bottom:0.7rem"><img src="/icon.svg" alt="" /> BodyMind</div>
+            <p style="color:var(--muted);font-size:0.92rem;max-width:22rem;line-height:1.55">The voice-first nutrition coach that logs your meals while you talk.</p>
+          </div>
+          <div><h5>Product</h5><a href="#how">How it works</a><a href="#features">Features</a><a href="#get">Download</a></div>
+          <div><h5>Account</h5><a href="/?mode=login">Log in</a><a href="/?mode=signup">Sign up</a></div>
+          <div><h5>Legal</h5><a href="#">Privacy</a><a href="#">Terms</a></div>
+        </div>
+        <div class="foot-bottom">
+          <span class="opdot"><i></i> All systems operational</span>
+          <span>© 2026 BodyMind</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- MODAL -->
+    <div class="overlay" id="overlay">
+      <div class="modal" id="modal"></div>
+    </div>
+
+    <script>
+      const DL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M5 21h14"/></svg>`
+      const G = {
+        windows: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.7 10.4 4.6v7H3zM10.4 12.6v7L3 18.4v-5.8zM11.5 4.4 21 3v8.6h-9.5zM21 12.6V21l-9.5-1.4v-7z"/></svg>',
+        apple: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.36 12.78c.03 3.02 2.65 4.02 2.68 4.04-.02.07-.42 1.43-1.38 2.84-.83 1.22-1.69 2.43-3.05 2.46-1.33.02-1.76-.79-3.29-.79-1.52 0-2 .77-3.26.81-1.31.05-2.31-1.32-3.15-2.53C2.97 17.13 1.7 12.7 3.5 9.71c.89-1.49 2.48-2.43 4.2-2.46 1.28-.02 2.49.86 3.27.86.78 0 2.25-1.06 3.79-.91.64.03 2.45.26 3.61 1.95-.09.06-2.16 1.26-2.14 3.67M13.9 5.4c.69-.83 1.15-1.99 1.02-3.15-.99.04-2.19.66-2.9 1.49-.64.74-1.2 1.92-1.05 3.05 1.1.09 2.24-.56 2.93-1.39"/></svg>',
+        android: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 9.5 19 7.1a.4.4 0 0 0-.7-.4l-1.4 2.5a8.7 8.7 0 0 0-9.8 0L5.7 6.7a.4.4 0 0 0-.7.4l1.4 2.4A8 8 0 0 0 2.5 16h19a8 8 0 0 0-3.9-6.5M8 13.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2m8 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2"/></svg>',
+      }
+      const DEVICES = {
+        windows: { glyph: G.windows, label: 'Windows', kind: 'Computer', browser: 'Chrome or Edge',
+          steps: ['Open this page in <b>Chrome</b> or <b>Edge</b>.', 'Click <b>Download</b> (or the ⊕ icon in the address bar).', 'BodyMind opens in its own window with a desktop shortcut.'] },
+        mac: { glyph: G.apple, label: 'macOS', kind: 'Computer', browser: 'Chrome, Edge or Safari',
+          steps: ['In <b>Chrome / Edge</b>: click <b>Download</b>.', 'In <b>Safari</b>: choose <b>File → Add to Dock</b>.', 'Launch BodyMind from Launchpad.'] },
+        android: { glyph: G.android, label: 'Android', kind: 'Phone', browser: 'Chrome',
+          steps: ['Open this page in <b>Chrome</b>.', 'Tap <b>Download</b>, or menu <b>⋮ → Add to Home screen</b>.', 'BodyMind lands on your home screen.'] },
+        ios: { glyph: G.apple, label: 'iPhone / iPad', kind: 'Phone', browser: 'Safari',
+          steps: ['Open this page in <b>Safari</b>.', 'Tap the <b>Share</b> button ( □↑ ).', 'Choose <b>Add to Home Screen → Add</b>.'] },
+      }
+
+      const ua = navigator.userAgent
+      const isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+      const detected = isIOS ? 'ios' : /android/i.test(ua) ? 'android' : /windows/i.test(ua) ? 'windows' : /macintosh|mac os x/i.test(ua) ? 'mac' : 'windows'
+
+      let deferred = null
+      const platformsEl = document.getElementById('platforms')
+      const toastEl = document.getElementById('toast')
+      const overlay = document.getElementById('overlay')
+      const modal = document.getElementById('modal')
+
+      function setHeroLabels() {
+        const name = DEVICES[detected].label
+        document.getElementById('heroLabel').textContent = 'Download for ' + name
+        document.getElementById('ctaLabel').textContent = 'Download for ' + name
+      }
+
+      function openModal(key) {
+        const d = DEVICES[key]
+        modal.innerHTML = `
+          <div class="modal-head"><span class="pg">${d.glyph}</span><h3>Install on ${d.label}</h3></div>
+          <ol class="steps">${d.steps.map((s) => `<li>${s}</li>`).join('')}</ol>
+          <button class="modal-close" id="modalClose">Got it</button>`
+        overlay.classList.add('show')
+        document.getElementById('modalClose').onclick = () => overlay.classList.remove('show')
+      }
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove('show') }
+
+      function download(key) {
+        if (deferred && key !== 'ios') {
+          deferred.prompt()
+          deferred.userChoice.finally(() => { deferred = null })
+        } else {
+          openModal(key)
+        }
+      }
+
+      function renderPlatforms() {
+        platformsEl.innerHTML = ''
+        for (const [key, d] of Object.entries(DEVICES)) {
+          const el = document.createElement('div')
+          el.className = 'pcard'
+          el.innerHTML = `<div class="pglyph">${d.glyph}</div><div class="pname">${d.label}</div><div class="pkind">${d.kind}</div><button class="pdl">${DL} Download</button>`
+          el.querySelector('.pdl').onclick = () => download(key)
+          platformsEl.appendChild(el)
+        }
+      }
+
+      document.getElementById('heroBtn').onclick = () => download(detected)
+      document.getElementById('ctaBtn').onclick = () => download(detected)
+
+      window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e })
+      window.addEventListener('appinstalled', () => { toastEl.textContent = 'Installed! 🎉  Find BodyMind with your other apps.' })
+      if (window.matchMedia('(display-mode: standalone)').matches) toastEl.textContent = "You're already running the installed app."
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {})
+
+      setHeroLabels()
+      renderPlatforms()
+    </script>
+  </body>
+</html>

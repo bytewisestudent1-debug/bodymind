@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: bodymind-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bodymind
+    ports:
+      - "5433:5432"
+    volumes:
+      - bodymind_pgdata:/var/lib/postgresql/data
+
+volumes:
+  bodymind_pgdata:
