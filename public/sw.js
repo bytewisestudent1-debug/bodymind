@@ -1,6 +1,8 @@
 // Minimal service worker — makes BodyMind installable and adds light offline caching.
-const CACHE = 'bodymind-v1'
+const CACHE = 'bodymind-v2'
 const SHELL = ['/', '/index.html', '/icon.svg', '/manifest.webmanifest']
+// Backend routes — always hit the network, never serve a cached (stale) copy.
+const API_PATHS = ['/log', '/auth', '/profile', '/coach', '/plan', '/body-scan', '/weigh-in']
 
 self.addEventListener('install', (event) => {
   self.skipWaiting()
@@ -21,8 +23,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return
 
   const url = new URL(request.url)
-  // Never cache backend API traffic.
-  if (url.port === '3001' || url.pathname.startsWith('/log')) return
+  // Never cache backend API traffic — always go to the live server.
+  if (url.port === '3001' || API_PATHS.some((p) => url.pathname.startsWith(p))) return
 
   // Network-first so fresh assets always win; fall back to cache when offline.
   event.respondWith(

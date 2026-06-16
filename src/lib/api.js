@@ -31,15 +31,38 @@ async function errorMessage(res, fallback) {
   }
 }
 
+// Resilient fetch: long timeout + auto-retry GETs (the free host can take ~50s to
+// wake from sleep), and a friendly message instead of a raw "Failed to fetch".
+async function safeFetch(url, opts = {}) {
+  const method = (opts.method || 'GET').toUpperCase()
+  const maxAttempts = method === 'GET' ? 3 : 1 // don't retry POSTs (avoid double-submit)
+  for (let attempt = 1; ; attempt++) {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 60000)
+    try {
+      const res = await fetch(url, { ...opts, signal: ctrl.signal })
+      clearTimeout(timer)
+      return res
+    } catch (err) {
+      clearTimeout(timer)
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 1500 * attempt))
+        continue
+      }
+      throw new Error("Can't reach the server — it may be waking up (free hosting sleeps when idle). Wait a few seconds and try again.")
+    }
+  }
+}
+
 // ── Meals ──
 export async function getLogs() {
-  const res = await fetch(`${API_URL}/log`, { headers: headers() })
+  const res = await safeFetch(`${API_URL}/log`, { headers: headers() })
   if (!res.ok) throw new Error(`GET /log failed: ${res.status}`)
   return res.json()
 }
 
 export async function createLog(payload) {
-  const res = await fetch(`${API_URL}/log`, {
+  const res = await safeFetch(`${API_URL}/log`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify(payload),
@@ -49,20 +72,20 @@ export async function createLog(payload) {
 }
 
 export async function clearLogs() {
-  const res = await fetch(`${API_URL}/log`, { method: 'DELETE', headers: headers() })
+  const res = await safeFetch(`${API_URL}/log`, { method: 'DELETE', headers: headers() })
   if (!res.ok) throw new Error(`DELETE /log failed: ${res.status}`)
   return res.json().catch(() => ({}))
 }
 
 // ── Body profile + coach ──
 export async function getProfile() {
-  const res = await fetch(`${API_URL}/profile`, { headers: headers() })
+  const res = await safeFetch(`${API_URL}/profile`, { headers: headers() })
   if (!res.ok) throw new Error(`GET /profile failed: ${res.status}`)
   return res.json()
 }
 
 export async function updateProfile(payload) {
-  const res = await fetch(`${API_URL}/profile`, {
+  const res = await safeFetch(`${API_URL}/profile`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify(payload),
@@ -72,7 +95,7 @@ export async function updateProfile(payload) {
 }
 
 export async function weighIn(weight_kg) {
-  const res = await fetch(`${API_URL}/weigh-in`, {
+  const res = await safeFetch(`${API_URL}/weigh-in`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify({ weight_kg }),
@@ -82,7 +105,7 @@ export async function weighIn(weight_kg) {
 }
 
 export async function getCoaching(message) {
-  const res = await fetch(`${API_URL}/coach`, {
+  const res = await safeFetch(`${API_URL}/coach`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify({ message: message || undefined }),
@@ -92,13 +115,13 @@ export async function getCoaching(message) {
 }
 
 export async function getPlan() {
-  const res = await fetch(`${API_URL}/plan`, { method: 'POST', headers: headers(true), body: '{}' })
+  const res = await safeFetch(`${API_URL}/plan`, { method: 'POST', headers: headers(true), body: '{}' })
   if (!res.ok) throw new Error(await errorMessage(res, 'Failed to make a plan'))
   return res.json()
 }
 
 export async function bodyScan(file) {
-  const res = await fetch(`${API_URL}/body-scan`, {
+  const res = await safeFetch(`${API_URL}/body-scan`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify({ file }),
@@ -109,7 +132,7 @@ export async function bodyScan(file) {
 
 // ── Auth ──
 export async function signup(email, password) {
-  const res = await fetch(`${API_URL}/auth/signup`, {
+  const res = await safeFetch(`${API_URL}/auth/signup`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify({ email, password }),
@@ -121,7 +144,7 @@ export async function signup(email, password) {
 }
 
 export async function login(email, password) {
-  const res = await fetch(`${API_URL}/auth/login`, {
+  const res = await safeFetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: headers(true),
     body: JSON.stringify({ email, password }),
@@ -133,13 +156,13 @@ export async function login(email, password) {
 }
 
 export async function logout() {
-  const res = await fetch(`${API_URL}/auth/logout`, { method: 'POST', headers: headers() })
+  const res = await safeFetch(`${API_URL}/auth/logout`, { method: 'POST', headers: headers() })
   clearToken()
   return res.ok
 }
 
 export async function me() {
-  const res = await fetch(`${API_URL}/auth/me`, { headers: headers() })
+  const res = await safeFetch(`${API_URL}/auth/me`, { headers: headers() })
   if (!res.ok) throw new Error('not logged in')
   return res.json()
 }
