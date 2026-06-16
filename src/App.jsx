@@ -1286,7 +1286,7 @@ function App() {
       </div>
 
       {/* 3-panel layout */}
-      <div className="flex-1 w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_0.9fr_1.5fr] gap-4 pb-3 md:min-h-0">
+      <div className="flex-1 w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-[0.95fr_1.3fr_1.4fr] gap-4 pb-3 md:min-h-0">
         {/* Log — food + exercise, grouped by day */}
         <section className={`order-3 md:order-3 ${panel}`}>
           <div className="flex items-center justify-between mb-3">
