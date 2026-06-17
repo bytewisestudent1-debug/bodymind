@@ -29,6 +29,7 @@ import {
   getLogs,
   createLog,
   clearLogs,
+  deleteLog,
   getProfile,
   updateProfile,
   getCoaching,
@@ -1123,17 +1124,18 @@ function App() {
     if (e.kind === 'exercise') return s + (e.calories || 0) / 25 // workouts make you stronger
     return s + ((e.protein || 0) - (e.calories || 0) / 22) // food: protein good, big calories bad
   }, 0)
-  const youStrength = Math.round(youXP + Math.max(-25, Math.min(45, gains)))
+  // Strength accumulates over time (youXP); recent food only nudges it a little, so growth is GRADUAL.
+  const youStrength = Math.round(youXP + Math.max(-5, Math.min(5, gains / 5)))
   const strongerThanCoach = youStrength >= COACH_STRENGTH
-  // Continuous bulk so muscle grows gradually as strength builds (snappier so it's visible).
-  const bulk = Math.max(0, Math.min(1.35, (youStrength + 15) / 70))
-  // Starting fatness comes from your real body (BMI): heavy profile → starts fat.
-  // Recent junk adds belly; building strength/muscle leans you out over time.
+  // Muscle builds slowly as strength accumulates (a meal moves it a little, not all at once).
+  const bulk = Math.max(0, Math.min(1.35, (youStrength + 12) / 95))
+  // Starting body shape comes from your real BMI (heavy profile → starts fat).
+  // You lean out gradually as you build muscle over time.
   const bmi = (targets && targets.bmi) || 22
   const fatFromBmi = Math.max(0, Math.min(1.5, (bmi - 21) / 11))
-  const softness = Math.max(0, Math.min(1.7, fatFromBmi + Math.max(0, -gains) / 35 - bulk * 0.55))
-  // Character height tracks your real height (taller profile → taller character).
-  const heightScale = profile?.height_cm ? Math.max(0.82, Math.min(1.24, Number(profile.height_cm) / 170)) : 1
+  const softness = Math.max(0, Math.min(1.7, fatFromBmi - bulk * 0.6 + Math.max(0, -gains) / 80))
+  // Height = your real height, and you grow a bit taller as you bulk up.
+  const heightScale = (profile?.height_cm ? Math.max(0.82, Math.min(1.24, Number(profile.height_cm) / 170)) : 1) + bulk * 0.13
   const youMood = strongerThanCoach
     ? 'STRONGER THAN COACH 👑'
     : softness > 0.95
@@ -1167,14 +1169,32 @@ function App() {
     setTimeout(() => setFeed(null), 2400)
   }
 
-  // React on the "You" character every time you log a real food.
+  // Delete one log entry (optimistic — drop from the list, then tell the server).
+  const removeLogEntry = async (id) => {
+    setLog((p) => p.filter((e) => e.id !== id))
+    try {
+      await deleteLog(id)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  // Every logged item nudges your strength a LITTLE — growth accumulates gradually over time.
   useEffect(() => {
     if (log.length > prevLogLen.current && prevLogLen.current !== 0) {
       const newest = log[0]
-      if (newest && newest.kind !== 'exercise') {
-        const good = (newest.protein || 0) - (newest.calories || 0) / 22 > 0
-        setFeed({ who: 'you', text: good ? 'gains 💪' : 'oof 🍔' })
-        setTimeout(() => setFeed(null), 2000)
+      if (newest) {
+        const q =
+          newest.kind === 'exercise'
+            ? (newest.calories || 0) / 70 // a workout → small strength gain
+            : ((newest.protein || 0) - (newest.calories || 0) / 22) / 14 // food quality
+        const delta = Math.max(-1, Math.min(2, Math.round(q)))
+        if (delta !== 0) setYouXP((x) => Math.max(0, x + delta))
+        if (newest.kind !== 'exercise') {
+          const good = (newest.protein || 0) - (newest.calories || 0) / 22 > 0
+          setFeed({ who: 'you', text: good ? 'gains 💪' : 'oof 🍔' })
+          setTimeout(() => setFeed(null), 2000)
+        }
       }
     }
     prevLogLen.current = log.length
@@ -1197,12 +1217,13 @@ function App() {
   const startFight = () => {
     const youMax = 85 + Math.round(youStrength / 2) // your HP scales hard with strength
     const coachMax = 175 // coach is a tank
-    setFight({ youHp: youMax, coachHp: coachMax, youMax, coachMax, msg: 'Ding ding 🔔 — fight!', over: false, won: false, hit: null })
+    setFight({ youHp: youMax, coachHp: coachMax, youMax, coachMax, msg: 'Ding ding 🔔 — fight!', over: false, won: false, hit: null, punch: 0, lastMove: null })
   }
   const fightMove = (move) => {
     if (!fight || fight.over) return
     const jabBonus = Math.floor(youStrength / 12)
     const hookBonus = Math.floor(youStrength / 8)
+    const punch = (fight.punch || 0) + 1 // bumps every move so the glove animation replays
     let youHp = fight.youHp
     let coachHp = fight.coachHp
     let youBlock = false
@@ -1214,7 +1235,7 @@ function App() {
     let msg = move === 'block' ? 'You guard up 🛡 ' : youDealt ? `You land a ${move} for ${youDealt}! ` : `Your ${move} whiffs! `
     if (coachHp <= 0) {
       setCoinsBonus((c) => c + 35)
-      setFight({ ...fight, coachHp: 0, over: true, won: true, hit: 'coach', msg: `${msg}KO! 🏆 You beat the coach — +35 🪙` })
+      setFight({ ...fight, coachHp: 0, over: true, won: true, hit: 'coach', punch, lastMove: move, msg: `${msg}KO! 🏆 You beat the coach — +35 🪙` })
       return
     }
     // coach hits harder
@@ -1226,10 +1247,10 @@ function App() {
     youHp = Math.max(0, youHp - coachDealt)
     msg += coachDealt ? `Coach SMASHES back for ${coachDealt}!` : 'Coach misses!'
     if (youHp <= 0) {
-      setFight({ ...fight, youHp: 0, over: true, won: false, hit: 'you', msg: `${msg} You got KO’d 💀 — get stronger!` })
+      setFight({ ...fight, youHp: 0, over: true, won: false, hit: 'you', punch, lastMove: move, msg: `${msg} You got KO’d 💀 — get stronger!` })
       return
     }
-    setFight({ ...fight, youHp, coachHp, hit: coachDealt ? 'you' : youDealt ? 'coach' : null, msg })
+    setFight({ ...fight, youHp, coachHp, hit: coachDealt ? 'you' : youDealt ? 'coach' : null, punch, lastMove: move, msg })
   }
 
   // Highest build tier you've earned (can't fake a buffer look than your strength).
@@ -1636,9 +1657,14 @@ function App() {
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-[11px] uppercase tracking-wider text-gray-500">{entry.time}</span>
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 ${isEx ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : 'bg-green-500/10 text-green-300 border border-green-500/20'}`}>
-                            {isEx ? <><Activity className="h-3 w-3" /> Exercise</> : <><Utensils className="h-3 w-3" /> Meal</>}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 ${isEx ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' : 'bg-green-500/10 text-green-300 border border-green-500/20'}`}>
+                              {isEx ? <><Activity className="h-3 w-3" /> Exercise</> : <><Utensils className="h-3 w-3" /> Meal</>}
+                            </span>
+                            <button type="button" onClick={() => removeLogEntry(entry.id)} aria-label="Delete entry" className="text-gray-600 hover:text-red-400 transition-colors">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-white text-sm font-medium leading-snug">{entry.transcript}</p>
                         <p className="text-gray-400 text-sm leading-relaxed">{entry.reply}</p>
@@ -2257,8 +2283,8 @@ function App() {
                   <path d={fight.hit === 'coach' ? 'M32 21 Q36 17 40 21' : 'M32 19 Q36 22 40 19'} stroke="#0c1a12" strokeWidth="1.8" fill="none" strokeLinecap="round" />
                 </svg>
               </div>
-              <span key={`gl${fight.coachHp}`} className={`absolute -bottom-2 left-3 text-5xl ${fight.hit === 'coach' ? 'fp-punch' : ''}`}>🥊</span>
-              <span key={`gr${fight.youHp}`} className={`absolute -bottom-2 right-3 text-5xl ${fight.hit === 'coach' ? 'fp-punch' : ''}`}>🥊</span>
+              <span key={`gl${fight.punch}`} className={`absolute -bottom-2 left-3 text-5xl ${fight.lastMove === 'jab' || fight.lastMove === 'hook' ? 'fp-punch' : ''}`}>🥊</span>
+              <span key={`gr${fight.punch}`} className={`absolute -bottom-2 right-3 text-5xl ${fight.lastMove === 'jab' || fight.lastMove === 'hook' ? 'fp-punch' : ''}`}>🥊</span>
               {fight.over && <div className="absolute inset-0 flex items-center justify-center text-7xl">{fight.won ? '🏆' : '💀'}</div>}
             </div>
 

@@ -77,6 +77,12 @@ export async function clearLogs() {
   return res.json().catch(() => ({}))
 }
 
+export async function deleteLog(id) {
+  const res = await safeFetch(`${API_URL}/log/${id}`, { method: 'DELETE', headers: headers() })
+  if (!res.ok) throw new Error(`DELETE /log/${id} failed: ${res.status}`)
+  return res.json().catch(() => ({}))
+}
+
 // ── Body profile + coach ──
 export async function getProfile() {
   const res = await safeFetch(`${API_URL}/profile`, { headers: headers() })

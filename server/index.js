@@ -448,6 +448,18 @@ app.delete('/log', async (req, res) => {
   }
 })
 
+// Delete a single log entry by id.
+app.delete('/log/:id', async (req, res) => {
+  try {
+    const uid = await userIdFromReq(req)
+    const result = await pool.query(`DELETE FROM food_logs WHERE id = $1::uuid AND user_id = $2`, [req.params.id, uid])
+    res.json({ deleted: result.rowCount })
+  } catch (err) {
+    console.error('DELETE /log/:id failed:', err)
+    res.status(500).json({ error: 'Failed to delete entry' })
+  }
+})
+
 app.get('/profile', async (req, res) => {
   try {
     const uid = await userIdFromReq(req)
