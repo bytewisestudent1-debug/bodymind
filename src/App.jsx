@@ -1088,29 +1088,24 @@ function App() {
   }, 0)
   const youStrength = Math.round(youXP + Math.max(-25, Math.min(45, gains)))
   const strongerThanCoach = youStrength >= COACH_STRENGTH
-  const youBuild =
-    youStrength <= -8
-      ? 'fat'
-      : youStrength < 8
-        ? 'soft'
-        : youStrength < 35
-          ? 'normal'
-          : youStrength < 90
-            ? 'fit'
-            : strongerThanCoach
-              ? 'swole'
-              : 'buff'
+  // Continuous bulk 0→1.3 so muscle grows gradually (not in snaps) as strength builds.
+  const bulk = Math.max(0, Math.min(1.3, (youStrength + 12) / 100))
+  // Starting fatness comes from your real body (BMI): heavy profile → starts fat.
+  // Recent junk adds belly; building strength/muscle leans you out over time.
+  const bmi = (targets && targets.bmi) || 22
+  const fatFromBmi = Math.max(0, Math.min(1.5, (bmi - 21) / 11))
+  const softness = Math.max(0, Math.min(1.7, fatFromBmi + Math.max(0, -gains) / 35 - bulk * 0.55))
   const youMood = strongerThanCoach
     ? 'STRONGER THAN COACH 👑'
-    : youBuild === 'fat'
-      ? 'too much junk 🍔'
-      : youBuild === 'soft'
+    : softness > 0.95
+      ? 'gotta slim down 🍔'
+      : softness > 0.5
         ? 'eat cleaner 😅'
-        : youBuild === 'normal'
-          ? "let's get gains"
-          : youBuild === 'fit'
-            ? 'getting lean 🔥'
-            : 'STRONG 💪'
+        : bulk > 0.75
+          ? 'getting jacked 🔥'
+          : bulk > 0.35
+            ? 'gaining muscle 💪'
+            : "let's get gains"
   const mealItems = checklist.filter((i) => i.kind === 'food')
   const exItems = checklist.filter((i) => i.kind === 'exercise')
   const weightLb = profile?.weight_kg ? Math.round(Number(profile.weight_kg) / KG_PER_LB) : null
@@ -1962,7 +1957,11 @@ function App() {
 
       {/* ── "You" character — physique reflects your food ── */}
       {!showCoach && (
-        <div className={`you-char yc-${youBuild}${playEmote ? ' yc-play' : ''}${feed?.who === 'you' ? ' ch-eat' : ''}`} aria-hidden="true">
+        <div
+          className={`you-char${strongerThanCoach ? ' yc-swole' : ''}${softness > 0.6 ? ' yc-sad' : ''}${playEmote ? ' yc-play' : ''}${feed?.who === 'you' ? ' ch-eat' : ''}`}
+          style={{ '--bulk': bulk, '--soft': softness }}
+          aria-hidden="true"
+        >
           <span className="yc-tip">You · {youMood}</span>
           <span className="yc-emote">{playEmote ? '🤝' : ''}</span>
           {feed?.who === 'you' && <span className="char-speech">{feed.text}</span>}
