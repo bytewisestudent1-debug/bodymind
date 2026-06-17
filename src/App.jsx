@@ -998,6 +998,9 @@ function App() {
   const remaining = hasTargets ? Math.max(0, targets.calorieTarget - netCalories) : 0
   const calPct = hasTargets ? Math.min(100, Math.max(0, Math.round((netCalories / targets.calorieTarget) * 100))) : 0
   const proPct = hasTargets && targets.proteinTarget ? Math.min(100, Math.round((totalProtein / targets.proteinTarget) * 100)) : 0
+  // How far OVER each goal you are (0 if still under). Calories over = bad, protein over = good.
+  const calOver = hasTargets ? Math.max(0, netCalories - targets.calorieTarget) : 0
+  const proOver = hasTargets && targets.proteinTarget ? Math.max(0, totalProtein - targets.proteinTarget) : 0
   const mealItems = checklist.filter((i) => i.kind === 'food')
   const exItems = checklist.filter((i) => i.kind === 'exercise')
   const weightLb = profile?.weight_kg ? Math.round(Number(profile.weight_kg) / KG_PER_LB) : null
@@ -1230,17 +1233,24 @@ function App() {
             <span className="inline-flex items-center gap-1.5 text-sm text-white">
               <Target className="h-4 w-4 text-green-400" /> {GOAL_LABEL[profile.goal]}
             </span>
-            <span className="text-sm text-gray-300">
-              <b className="text-white">{remaining}</b> cal left
-              <span className="text-gray-500"> of {targets.calorieTarget}</span>
-            </span>
+            {calOver > 0 ? (
+              <span className="inline-flex items-center gap-1 text-sm rounded-full px-2.5 py-0.5 bg-red-500/12 text-red-300 border border-red-500/25">
+                <TrendingUp className="h-3.5 w-3.5" /> {calOver} cal over goal
+              </span>
+            ) : (
+              <span className="text-sm text-gray-300">
+                <b className="text-white">{remaining}</b> cal left
+                <span className="text-gray-500"> of {targets.calorieTarget}</span>
+              </span>
+            )}
             {totalBurned > 0 && (
               <span className="inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 bg-amber-500/10 text-amber-300 border border-amber-500/20">
                 <Activity className="h-3 w-3" /> {totalBurned} burned
               </span>
             )}
             <span className="text-sm text-gray-300">
-              <b className="text-white">{totalProtein}</b>/{targets.proteinTarget}g protein
+              <b className={proOver > 0 ? 'text-green-400' : 'text-white'}>{totalProtein}</b>/{targets.proteinTarget}g protein
+              {proOver > 0 && <span className="text-green-400"> · goal hit ✓</span>}
             </span>
             {weightLb != null && <span className="text-sm text-gray-400">{weightLb} lb · BMI {targets.bmi}</span>}
             {trendLb != null && trendLb !== 0 && (
@@ -1307,7 +1317,7 @@ function App() {
                     <Flame className="h-4 w-4 text-green-400" />
                   </span>
                   <div className="leading-tight">
-                    <div className="text-lg font-semibold text-white">
+                    <div className={`text-lg font-semibold ${calOver > 0 ? 'text-red-400' : 'text-white'}`}>
                       {netCalories}
                       {hasTargets && <span className="text-xs font-normal text-gray-500"> / {targets.calorieTarget}</span>}
                     </div>
@@ -1316,12 +1326,13 @@ function App() {
                 </div>
                 {hasTargets && (
                   <div className="mt-2.5 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-                    <div className="bar-fill h-full rounded-full bg-gradient-to-r from-green-600 to-green-400" style={{ width: `${calPct}%` }} />
+                    <div className={`bar-fill h-full rounded-full ${calOver > 0 ? 'bg-gradient-to-r from-red-500 to-red-400' : 'bg-gradient-to-r from-green-600 to-green-400'}`} style={{ width: `${calPct}%` }} />
                   </div>
                 )}
                 <div className="mt-1.5 text-[10px] text-gray-500">
                   ate {totalCalories}
                   {totalBurned > 0 && <> · <span className="text-amber-400">burned {totalBurned}</span></>}
+                  {calOver > 0 && <> · <span className="text-red-400">{calOver} over</span></>}
                 </div>
               </div>
               <div className="card-hover rounded-xl border border-white/10 bg-[#12151b] p-3">
@@ -1330,7 +1341,7 @@ function App() {
                     <Dumbbell className="h-4 w-4 text-green-400" />
                   </span>
                   <div className="leading-tight">
-                    <div className="text-lg font-semibold text-white">
+                    <div className={`text-lg font-semibold ${proOver > 0 ? 'text-green-400' : 'text-white'}`}>
                       {totalProtein}g
                       {hasTargets && <span className="text-xs font-normal text-gray-500"> / {targets.proteinTarget}g</span>}
                     </div>
@@ -1342,6 +1353,7 @@ function App() {
                     <div className="bar-fill h-full rounded-full bg-gradient-to-r from-green-600 to-green-400" style={{ width: `${proPct}%` }} />
                   </div>
                 )}
+                {proOver > 0 && <div className="mt-1.5 text-[10px] text-green-400">✓ goal hit · +{proOver}g over</div>}
               </div>
             </div>
           ) : null}
