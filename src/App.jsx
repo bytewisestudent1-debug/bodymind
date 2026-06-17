@@ -658,7 +658,7 @@ function App() {
       setCoachMessages([
         {
           role: 'coach',
-          text: "Yo, wassup g 💪 I'm Coach Remy. Ask me anything — meal ideas, your numbers for today, or tell me to log a food (like “log a banana”).",
+          text: "Yo wassup gng 💪 it's Coach Remy. Hit me — meal ideas, your numbers today, or just tell me to log somethin' (like “log a banana”). Let's lock in fr 🔥",
         },
       ])
     }
