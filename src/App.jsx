@@ -1088,13 +1088,15 @@ function App() {
   }, 0)
   const youStrength = Math.round(youXP + Math.max(-25, Math.min(45, gains)))
   const strongerThanCoach = youStrength >= COACH_STRENGTH
-  // Continuous bulk 0→1.3 so muscle grows gradually (not in snaps) as strength builds.
-  const bulk = Math.max(0, Math.min(1.3, (youStrength + 12) / 100))
+  // Continuous bulk so muscle grows gradually as strength builds (snappier so it's visible).
+  const bulk = Math.max(0, Math.min(1.35, (youStrength + 15) / 70))
   // Starting fatness comes from your real body (BMI): heavy profile → starts fat.
   // Recent junk adds belly; building strength/muscle leans you out over time.
   const bmi = (targets && targets.bmi) || 22
   const fatFromBmi = Math.max(0, Math.min(1.5, (bmi - 21) / 11))
   const softness = Math.max(0, Math.min(1.7, fatFromBmi + Math.max(0, -gains) / 35 - bulk * 0.55))
+  // Character height tracks your real height (taller profile → taller character).
+  const heightScale = profile?.height_cm ? Math.max(0.82, Math.min(1.24, Number(profile.height_cm) / 170)) : 1
   const youMood = strongerThanCoach
     ? 'STRONGER THAN COACH 👑'
     : softness > 0.95
@@ -1959,7 +1961,7 @@ function App() {
       {!showCoach && (
         <div
           className={`you-char${strongerThanCoach ? ' yc-swole' : ''}${softness > 0.6 ? ' yc-sad' : ''}${playEmote ? ' yc-play' : ''}${feed?.who === 'you' ? ' ch-eat' : ''}`}
-          style={{ '--bulk': bulk, '--soft': softness }}
+          style={{ '--bulk': bulk, '--soft': softness, '--htscale': heightScale }}
           aria-hidden="true"
         >
           <span className="yc-tip">You · {youMood}</span>
