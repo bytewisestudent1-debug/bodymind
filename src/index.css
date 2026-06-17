@@ -309,3 +309,113 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .roaming-coach, .rc-face, .rc-bob, .rc-figure, .rc-aura { animation: none; }
 }
+
+/* ── Coach customization (color / build / play emote) ── */
+.roaming-coach {
+  --cc-body: #43a682;
+  --cc-shade: #2f8c66;
+  --cc-dark: #1f7d56;
+  --cc-knuckle: #2a8460;
+}
+/* build = body width, applied to the non-animated wrapper so it won't fight the figure animation */
+.roaming-coach.cc-build-slim .rc-bob { transform: scaleX(0.82); }
+.roaming-coach.cc-build-normal .rc-bob { transform: scaleX(0.95); }
+.roaming-coach.cc-build-buff .rc-bob { transform: scaleX(1.08); }
+.roaming-coach.cc-build-round .rc-bob { transform: scaleX(1.3); }
+
+.rc-emote {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  transform: translateX(-50%);
+  font-size: 18px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+}
+.roaming-coach.rc-play .rc-emote { animation: emote-pop 2.5s ease-out; }
+@keyframes emote-pop {
+  0% { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.6); }
+  18% { opacity: 1; transform: translateX(-50%) translateY(-6px) scale(1.15); }
+  78% { opacity: 1; transform: translateX(-50%) translateY(-16px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-26px) scale(0.9); }
+}
+
+/* ── "You" buddy — its physique reflects what you eat ── */
+.you-char {
+  position: fixed;
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  right: 1rem;
+  z-index: 39;
+  width: 84px;
+  height: 118px;
+  pointer-events: none;
+  will-change: transform;
+  animation: yc-stroll 21s ease-in-out infinite alternate;
+}
+@keyframes yc-stroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100vw + 8rem)); }
+}
+.yc-bob {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
+  animation: yc-bob 0.8s ease-in-out infinite;
+}
+@keyframes yc-bob {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50% { transform: translateY(-4px) rotate(1.5deg); }
+}
+/* belly grows when you eat junk, shrinks + muscles show when you eat clean */
+.yc-belly { transform-box: fill-box; transform-origin: center; transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+.yc-muscle { opacity: 0; transition: opacity 0.5s; }
+.yc-smile, .yc-frown { transition: opacity 0.3s; }
+.yc-frown { opacity: 0; }
+
+.you-char.yc-fat .yc-belly { transform: scale(1.34); }
+.you-char.yc-soft .yc-belly { transform: scale(1.15); }
+.you-char.yc-normal .yc-belly { transform: scale(1); }
+.you-char.yc-fit .yc-belly { transform: scale(0.82); }
+.you-char.yc-buff .yc-belly { transform: scale(0.78); }
+.you-char.yc-fit .yc-muscle,
+.you-char.yc-buff .yc-muscle { opacity: 1; }
+.you-char.yc-fat .yc-smile,
+.you-char.yc-soft .yc-smile { opacity: 0; }
+.you-char.yc-fat .yc-frown,
+.you-char.yc-soft .yc-frown { opacity: 1; }
+
+.yc-tip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  background: #14171d;
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+.yc-emote {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  transform: translateX(-50%);
+  font-size: 16px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+}
+.you-char.yc-play .yc-tip { opacity: 1; }
+.you-char.yc-play .yc-emote { animation: emote-pop 2.5s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .you-char, .yc-bob { animation: none; }
+}

@@ -46,6 +46,28 @@ const WebGLShader = lazy(() => import('./WebGLShader').then((m) => ({ default: m
 const KG_PER_LB = 0.453592
 const GOAL_LABEL = { lose: 'Lose weight', maintain: 'Maintain', gain: 'Gain weight' }
 
+// Coach customization presets.
+const COACH_COLORS = {
+  emerald: { body: 'var(--cc-body)', shade: 'var(--cc-shade)', dark: 'var(--cc-dark)', knuckle: 'var(--cc-knuckle)' },
+  blue: { body: '#4f8ad6', shade: '#3a6fb0', dark: '#2c578c', knuckle: '#3a6fb0' },
+  violet: { body: '#9d7bd8', shade: '#7e5fc0', dark: '#634aa0', knuckle: '#7e5fc0' },
+  red: { body: '#d76f6f', shade: '#bd5252', dark: '#9c4040', knuckle: '#bd5252' },
+  orange: { body: '#e0954a', shade: '#c47a2f', dark: '#a36322', knuckle: '#c47a2f' },
+  slate: { body: '#8a98a8', shade: '#6e7d8d', dark: '#566472', knuckle: '#6e7d8d' },
+  pink: { body: '#e07ba6', shade: '#c45f8a', dark: '#a3486e', knuckle: '#c45f8a' },
+}
+const COACH_ACCESSORIES = ['none', 'cap', 'headband', 'shades', 'chain']
+const COACH_BUILDS = ['slim', 'normal', 'buff', 'round']
+const DEFAULT_COACH_STYLE = { color: 'emerald', accessory: 'none', build: 'buff' }
+
+function loadCoachStyle() {
+  try {
+    return { ...DEFAULT_COACH_STYLE, ...(JSON.parse(localStorage.getItem('bodymind_coach_style')) || {}) }
+  } catch {
+    return { ...DEFAULT_COACH_STYLE }
+  }
+}
+
 function localKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -119,6 +141,9 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true) // intro splash before sign-in
   const [coachMode, setCoachMode] = useState('walk') // mascot: walk | pushup | pullup | lift
   const [nearCoach, setNearCoach] = useState(false) // cursor close → he swings the dumbbell
+  const [coachStyle, setCoachStyle] = useState(loadCoachStyle) // color / accessory / build
+  const [showCustomize, setShowCustomize] = useState(false)
+  const [playEmote, setPlayEmote] = useState(false) // the two characters "play" together
   const [showWeigh, setShowWeigh] = useState(false)
   const [weighInput, setWeighInput] = useState('')
   const [showPlan, setShowPlan] = useState(false)
@@ -566,6 +591,24 @@ function App() {
     }
   }, [checklist])
 
+  // Persist coach customization.
+  useEffect(() => {
+    try {
+      localStorage.setItem('bodymind_coach_style', JSON.stringify(coachStyle))
+    } catch {
+      /* ignore */
+    }
+  }, [coachStyle])
+
+  // Every so often the coach and "You" play together (a little emote).
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPlayEmote(true)
+      setTimeout(() => setPlayEmote(false), 2600)
+    }, 11000)
+    return () => clearInterval(id)
+  }, [])
+
   const addItem = (kind, label, clear) => {
     const t = (label || '').trim()
     if (!t) return
@@ -1001,6 +1044,24 @@ function App() {
   // How far OVER each goal you are (0 if still under). Calories over = bad, protein over = good.
   const calOver = hasTargets ? Math.max(0, netCalories - targets.calorieTarget) : 0
   const proOver = hasTargets && targets.proteinTarget ? Math.max(0, totalProtein - targets.proteinTarget) : 0
+
+  // "You" character physique, from your recent food: protein/exercise → buff, junk → soft/round.
+  const gains = log.slice(0, 20).reduce((s, e) => {
+    if (e.kind === 'exercise') return s + (e.calories || 0) / 25 // workouts make you stronger
+    return s + ((e.protein || 0) - (e.calories || 0) / 22) // food: protein good, big calories bad
+  }, 0)
+  const youBuild =
+    gains <= -22 ? 'fat' : gains < -4 ? 'soft' : gains < 18 ? 'normal' : gains < 55 ? 'fit' : 'buff'
+  const youMood =
+    youBuild === 'fat'
+      ? 'too much junk 🍔'
+      : youBuild === 'soft'
+        ? 'eat cleaner 😅'
+        : youBuild === 'normal'
+          ? "let's get gains"
+          : youBuild === 'fit'
+            ? 'getting lean 🔥'
+            : 'STRONG 💪'
   const mealItems = checklist.filter((i) => i.kind === 'food')
   const exItems = checklist.filter((i) => i.kind === 'exercise')
   const weightLb = profile?.weight_kg ? Math.round(Number(profile.weight_kg) / KG_PER_LB) : null
@@ -1211,6 +1272,12 @@ function App() {
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {user && <span className="hidden sm:inline text-xs text-gray-400 max-w-[150px] truncate">{user}</span>}
+          <button
+            type="button" onClick={() => setShowCustomize(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-white/10 hover:border-green-500/50 rounded-full px-3 py-1.5 transition-colors"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-green-400" /> Coach
+          </button>
           <button
             type="button" onClick={openProfile}
             className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-white/10 hover:border-green-500/50 rounded-full px-3 py-1.5 transition-colors"
@@ -1693,8 +1760,15 @@ function App() {
             }
           }}
           aria-label="Chat with Coach Remy (drag to throw)"
-          className={`roaming-coach rc-${coachMode}${nearCoach ? ' rc-swinging' : ''}`}
+          className={`roaming-coach rc-${coachMode} cc-build-${coachStyle.build}${nearCoach ? ' rc-swinging' : ''}${playEmote ? ' rc-play' : ''}`}
+          style={{
+            '--cc-body': COACH_COLORS[coachStyle.color].body,
+            '--cc-shade': COACH_COLORS[coachStyle.color].shade,
+            '--cc-dark': COACH_COLORS[coachStyle.color].dark,
+            '--cc-knuckle': COACH_COLORS[coachStyle.color].knuckle,
+          }}
         >
+          <span className="rc-emote">{playEmote ? '💚' : ''}</span>
           <span className="rc-tip">{nearCoach ? 'Back off! 🏋️' : 'Throw me · tap to chat'}</span>
           <span className="rc-aura" />
           <span className="rc-face">
@@ -1716,19 +1790,19 @@ function App() {
                       <rect x="61" y="51" width="5" height="12" rx="2" fill="#1f2937" />
                     </g>
                     {/* thick legs */}
-                    <path d="M24 64 Q24 80 28 85 L33 85 Q34 72 34 64 Z" fill="#1f7d56" />
-                    <path d="M48 64 Q48 80 44 85 L39 85 Q38 72 38 64 Z" fill="#1f7d56" />
+                    <path d="M24 64 Q24 80 28 85 L33 85 Q34 72 34 64 Z" fill="var(--cc-dark)" />
+                    <path d="M48 64 Q48 80 44 85 L39 85 Q38 72 38 64 Z" fill="var(--cc-dark)" />
                     <ellipse cx="29" cy="86" rx="7" ry="3" fill="#ffffff" />
                     <ellipse cx="43" cy="86" rx="7" ry="3" fill="#ffffff" />
                     {/* shorts */}
                     <path d="M22 58 Q36 64 50 58 L48 66 Q36 70 24 66 Z" fill="#0f172a" />
                     {/* big arms */}
-                    <circle cx="16" cy="40" r="9" fill="#43a682" />
-                    <circle cx="14" cy="38" r="2.6" fill="#2a8460" />
-                    <rect x="11" y="44" width="8" height="13" rx="4" fill="#43a682" />
-                    <circle cx="56" cy="40" r="9" fill="#43a682" />
-                    <circle cx="58" cy="38" r="2.6" fill="#2a8460" />
-                    <rect x="53" y="44" width="8" height="13" rx="4" fill="#43a682" />
+                    <circle cx="16" cy="40" r="9" fill="var(--cc-body)" />
+                    <circle cx="14" cy="38" r="2.6" fill="var(--cc-knuckle)" />
+                    <rect x="11" y="44" width="8" height="13" rx="4" fill="var(--cc-body)" />
+                    <circle cx="56" cy="40" r="9" fill="var(--cc-body)" />
+                    <circle cx="58" cy="38" r="2.6" fill="var(--cc-knuckle)" />
+                    <rect x="53" y="44" width="8" height="13" rx="4" fill="var(--cc-body)" />
                     {/* dumbbell — his weapon, gripped in the right hand */}
                     <g className="rc-weapon-db">
                       <rect x="55" y="55.6" width="17" height="3.6" rx="1.8" fill="#94a3b8" />
@@ -1736,29 +1810,157 @@ function App() {
                       <rect x="68.5" y="51" width="6.5" height="12.8" rx="2.4" fill="#0b1220" />
                       <rect x="59.5" y="53.5" width="3" height="7.8" rx="1.3" fill="#1f2937" />
                       <rect x="75.5" y="53.5" width="3" height="7.8" rx="1.3" fill="#1f2937" />
-                      <circle cx="57" cy="57.4" r="3.4" fill="#2a8460" />
+                      <circle cx="57" cy="57.4" r="3.4" fill="var(--cc-knuckle)" />
                     </g>
                     {/* torso V-taper */}
-                    <path d="M18 32 Q36 26 54 32 L46 60 Q36 64 26 60 Z" fill="#43a682" />
-                    <ellipse cx="29" cy="38" rx="7" ry="5" fill="#2f8c66" />
-                    <ellipse cx="43" cy="38" rx="7" ry="5" fill="#2f8c66" />
-                    <path d="M36 42 L36 58" stroke="#1f7d56" strokeWidth="1.4" />
-                    <path d="M30 46 H42 M30 51 H42 M31 56 H41" stroke="#1f7d56" strokeWidth="1.2" opacity="0.7" />
-                    <path d="M28 28 Q36 24 44 28 L44 32 Q36 30 28 32 Z" fill="#2f8c66" />
+                    <path d="M18 32 Q36 26 54 32 L46 60 Q36 64 26 60 Z" fill="var(--cc-body)" />
+                    <ellipse cx="29" cy="38" rx="7" ry="5" fill="var(--cc-shade)" />
+                    <ellipse cx="43" cy="38" rx="7" ry="5" fill="var(--cc-shade)" />
+                    <path d="M36 42 L36 58" stroke="var(--cc-dark)" strokeWidth="1.4" />
+                    <path d="M30 46 H42 M30 51 H42 M31 56 H41" stroke="var(--cc-dark)" strokeWidth="1.2" opacity="0.7" />
+                    <path d="M28 28 Q36 24 44 28 L44 32 Q36 30 28 32 Z" fill="var(--cc-shade)" />
                     {/* head (bald) */}
-                    <circle cx="36" cy="19" r="9" fill="#43a682" />
+                    <circle cx="36" cy="19" r="9" fill="var(--cc-body)" />
                     <rect x="29" y="17" width="6.5" height="4" rx="2" fill="#0c1a12" />
                     <rect x="36.5" y="17" width="6.5" height="4" rx="2" fill="#0c1a12" />
                     <rect x="34.5" y="18" width="2" height="1.4" fill="#0c1a12" />
                     <path d="M32 24 Q36 27 40 24" stroke="#0c1a12" strokeWidth="1.8" fill="none" strokeLinecap="round" />
                     <path d="M28 30 Q36 27 44 30" stroke="#0c1a12" strokeWidth="1.3" fill="none" />
                     <circle cx="44" cy="40" r="3" fill="#f59e0b" />
+                    {/* accessory (chosen in Customize) */}
+                    {coachStyle.accessory === 'cap' && (
+                      <g>
+                        <path d="M27 13.5 Q36 4.5 45 13.5 L45 15 L27 15 Z" fill="#1f2937" />
+                        <rect x="43.5" y="13.4" width="8.5" height="2.6" rx="1.3" fill="#111827" />
+                      </g>
+                    )}
+                    {coachStyle.accessory === 'headband' && (
+                      <>
+                        <rect x="26.5" y="12.6" width="19" height="3.6" rx="1.8" fill="#dc5b5b" />
+                        <rect x="44" y="13" width="7" height="2.6" rx="1.3" fill="#dc5b5b" transform="rotate(22 44 14)" />
+                      </>
+                    )}
+                    {coachStyle.accessory === 'shades' && (
+                      <g>
+                        <rect x="28.3" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" />
+                        <rect x="36.7" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" />
+                        <rect x="35.3" y="17" width="1.4" height="1.6" fill="#0b0f14" />
+                      </g>
+                    )}
+                    {coachStyle.accessory === 'chain' && (
+                      <g>
+                        <path d="M30 29 Q36 35.5 42 29" stroke="#f5c542" strokeWidth="1.8" fill="none" />
+                        <circle cx="36" cy="34" r="2" fill="#f5c542" />
+                      </g>
+                    )}
                   </g>
                 </g>
               </svg>
             </span>
           </span>
         </button>
+      )}
+
+      {/* ── "You" character — physique reflects your food ── */}
+      {!showCoach && (
+        <div className={`you-char yc-${youBuild}${playEmote ? ' yc-play' : ''}`} aria-hidden="true">
+          <span className="yc-tip">You · {youMood}</span>
+          <span className="yc-emote">{playEmote ? '🤝' : ''}</span>
+          <span className="yc-bob">
+            <svg viewBox="0 0 64 90" className="w-full h-full">
+              <rect x="22" y="62" width="8" height="20" rx="3" fill="#caa078" />
+              <rect x="34" y="62" width="8" height="20" rx="3" fill="#caa078" />
+              <ellipse cx="26" cy="84" rx="6" ry="2.6" fill="#ffffff" />
+              <ellipse cx="38" cy="84" rx="6" ry="2.6" fill="#ffffff" />
+              <path d="M20 56 Q32 62 44 56 L42 64 Q32 68 22 64 Z" fill="#334155" />
+              <rect x="11" y="36" width="7" height="17" rx="3.5" fill="#e3b483" />
+              <rect x="46" y="36" width="7" height="17" rx="3.5" fill="#e3b483" />
+              <ellipse className="yc-belly" cx="32" cy="46" rx="15" ry="14" fill="#e3b483" />
+              <g className="yc-muscle">
+                <ellipse cx="26" cy="42" rx="5.5" ry="4" fill="#d49a64" />
+                <ellipse cx="38" cy="42" rx="5.5" ry="4" fill="#d49a64" />
+                <path d="M32 47 L32 56" stroke="#c98a52" strokeWidth="1.2" />
+              </g>
+              <circle cx="32" cy="22" r="9" fill="#e3b483" />
+              <circle cx="29" cy="21" r="1.3" fill="#0c1a12" />
+              <circle cx="35" cy="21" r="1.3" fill="#0c1a12" />
+              <path className="yc-smile" d="M29 25.5 Q32 28.5 35 25.5" stroke="#0c1a12" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              <path className="yc-frown" d="M29 27 Q32 24.5 35 27" stroke="#0c1a12" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+            </svg>
+          </span>
+        </div>
+      )}
+
+      {/* ── Customize coach modal ── */}
+      {showCustomize && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowCustomize(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#12151b] p-5 animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-medium flex items-center gap-2"><Sparkles className="h-4 w-4 text-green-400" /> Customize coach</h3>
+              <button type="button" onClick={() => setShowCustomize(false)} aria-label="Close" className="text-gray-500 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+
+            <div
+              className="flex justify-center mb-4"
+              style={{
+                '--cc-body': COACH_COLORS[coachStyle.color].body,
+                '--cc-shade': COACH_COLORS[coachStyle.color].shade,
+                '--cc-dark': COACH_COLORS[coachStyle.color].dark,
+                '--cc-knuckle': COACH_COLORS[coachStyle.color].knuckle,
+              }}
+            >
+              <svg viewBox="0 0 72 66" className="h-32" style={{ transform: `scaleX(${({ slim: 0.82, normal: 0.95, buff: 1.08, round: 1.3 })[coachStyle.build]})` }}>
+                <circle cx="16" cy="40" r="9" fill="var(--cc-body)" />
+                <rect x="11" y="44" width="8" height="13" rx="4" fill="var(--cc-body)" />
+                <circle cx="56" cy="40" r="9" fill="var(--cc-body)" />
+                <rect x="53" y="44" width="8" height="13" rx="4" fill="var(--cc-body)" />
+                <path d="M18 32 Q36 26 54 32 L46 60 Q36 64 26 60 Z" fill="var(--cc-body)" />
+                <ellipse cx="29" cy="38" rx="7" ry="5" fill="var(--cc-shade)" />
+                <ellipse cx="43" cy="38" rx="7" ry="5" fill="var(--cc-shade)" />
+                <path d="M36 42 L36 58" stroke="var(--cc-dark)" strokeWidth="1.4" />
+                <circle cx="36" cy="19" r="9" fill="var(--cc-body)" />
+                <rect x="29" y="17" width="6.5" height="4" rx="2" fill="#0c1a12" />
+                <rect x="36.5" y="17" width="6.5" height="4" rx="2" fill="#0c1a12" />
+                <path d="M32 24 Q36 27 40 24" stroke="#0c1a12" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+                {coachStyle.accessory === 'cap' && (<g><path d="M27 13.5 Q36 4.5 45 13.5 L45 15 L27 15 Z" fill="#1f2937" /><rect x="43.5" y="13.4" width="8.5" height="2.6" rx="1.3" fill="#111827" /></g>)}
+                {coachStyle.accessory === 'headband' && (<><rect x="26.5" y="12.6" width="19" height="3.6" rx="1.8" fill="#dc5b5b" /><rect x="44" y="13" width="7" height="2.6" rx="1.3" fill="#dc5b5b" transform="rotate(22 44 14)" /></>)}
+                {coachStyle.accessory === 'shades' && (<g><rect x="28.3" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" /><rect x="36.7" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" /><rect x="35.3" y="17" width="1.4" height="1.6" fill="#0b0f14" /></g>)}
+                {coachStyle.accessory === 'chain' && (<g><path d="M30 29 Q36 35.5 42 29" stroke="#f5c542" strokeWidth="1.8" fill="none" /><circle cx="36" cy="34" r="2" fill="#f5c542" /></g>)}
+              </svg>
+            </div>
+
+            <label className="text-xs text-gray-400">Color</label>
+            <div className="flex flex-wrap gap-2 mt-1.5 mb-4">
+              {Object.entries(COACH_COLORS).map(([k, c]) => (
+                <button key={k} type="button" onClick={() => setCoachStyle((s) => ({ ...s, color: k }))} aria-label={k}
+                  className={`h-8 w-8 rounded-full transition ${coachStyle.color === k ? 'ring-2 ring-white' : 'ring-1 ring-white/20 hover:ring-white/50'}`}
+                  style={{ background: c.body }} />
+              ))}
+            </div>
+
+            <label className="text-xs text-gray-400">Accessory</label>
+            <div className="grid grid-cols-5 gap-1.5 mt-1.5 mb-4">
+              {COACH_ACCESSORIES.map((a) => (
+                <button key={a} type="button" onClick={() => setCoachStyle((s) => ({ ...s, accessory: a }))}
+                  className={`rounded-lg py-1.5 text-[11px] capitalize border transition ${coachStyle.accessory === a ? 'bg-green-500 text-[#08090a] border-green-500 font-semibold' : 'bg-[#0f131a] text-gray-300 border-white/10 hover:border-green-500/40'}`}>
+                  {a}
+                </button>
+              ))}
+            </div>
+
+            <label className="text-xs text-gray-400">Build</label>
+            <div className="grid grid-cols-4 gap-1.5 mt-1.5">
+              {COACH_BUILDS.map((b) => (
+                <button key={b} type="button" onClick={() => setCoachStyle((s) => ({ ...s, build: b }))}
+                  className={`rounded-lg py-1.5 text-[11px] capitalize border transition ${coachStyle.build === b ? 'bg-green-500 text-[#08090a] border-green-500 font-semibold' : 'bg-[#0f131a] text-gray-300 border-white/10 hover:border-green-500/40'}`}>
+                  {b}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-[11px] text-gray-500 mt-4 text-center">Your “You” buddy's build changes with what you eat 🍎💪</p>
+          </div>
+        </div>
       )}
 
       {/* ── Profile modal ── */}
