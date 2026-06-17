@@ -62,6 +62,32 @@ const DEFAULT_COACH_STYLE = { color: 'emerald', accessory: 'none', build: 'buff'
 
 // Coach's fixed strength. Stay consistent (~a year of daily wins + feeding) to pass it.
 const COACH_STRENGTH = 300
+
+// "You" character skin/body palettes (cosmetic).
+const YOU_COLORS = {
+  tan: { skin: '#e3b483', dark: '#caa078', shade: '#d49a64', line: '#c98a52' },
+  light: { skin: '#f0cfa8', dark: '#dcb78f', shade: '#e3bd95', line: '#cda876' },
+  brown: { skin: '#b07a4e', dark: '#9b6a42', shade: '#a06f46', line: '#855a39' },
+  deep: { skin: '#8a5a36', dark: '#76492b', shade: '#7e5230', line: '#5f3b22' },
+  emerald: { skin: '#43a682', dark: '#2f8c66', shade: '#2f8c66', line: '#1f7d56' },
+  blue: { skin: '#4f8ad6', dark: '#3a6fb0', shade: '#3a6fb0', line: '#2c578c' },
+}
+const DEFAULT_YOU_STYLE = { color: 'tan', accessory: 'none' }
+function loadYouStyle() {
+  try {
+    return { ...DEFAULT_YOU_STYLE, ...(JSON.parse(localStorage.getItem('bodymind_you_style')) || {}) }
+  } catch {
+    return { ...DEFAULT_YOU_STYLE }
+  }
+}
+// Build tiers you unlock by earning strength (can't fake being buff).
+const YOU_TIERS = [
+  { key: 'soft', label: 'Soft', need: 0 },
+  { key: 'average', label: 'Average', need: 20 },
+  { key: 'fit', label: 'Fit', need: 60 },
+  { key: 'buff', label: 'Buff', need: 130 },
+  { key: 'swole', label: 'Swole 👑', need: COACH_STRENGTH },
+]
 // Shop — buy with coins (earned by logging), then feed the coach or "You".
 const SHOP = [
   { id: 'fruit', name: 'Fruit', emoji: '🍎', cost: 5, xp: 2, react: 'Yum! 😋' },
@@ -165,6 +191,11 @@ function App() {
   const [feed, setFeed] = useState(null) // { who: 'you'|'coach', text } — speech bubble
   const fullRef = useRef({ count: 0, last: 0 })
   const prevLogLen = useRef(0)
+  const [coinsBonus, setCoinsBonus] = useState(() => Number(localStorage.getItem('bodymind_coins_bonus')) || 0) // game winnings
+  const [youStyle, setYouStyle] = useState(loadYouStyle) // your character's color/accessory
+  const [showYouEdit, setShowYouEdit] = useState(false)
+  const [showFight, setShowFight] = useState(false)
+  const [fight, setFight] = useState(null) // boxing match state
   const [showWeigh, setShowWeigh] = useState(false)
   const [weighInput, setWeighInput] = useState('')
   const [showPlan, setShowPlan] = useState(false)
@@ -640,6 +671,12 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('bodymind_xp_date', xpDate) } catch { /* ignore */ }
   }, [xpDate])
+  useEffect(() => {
+    try { localStorage.setItem('bodymind_coins_bonus', String(coinsBonus)) } catch { /* ignore */ }
+  }, [coinsBonus])
+  useEffect(() => {
+    try { localStorage.setItem('bodymind_you_style', JSON.stringify(youStyle)) } catch { /* ignore */ }
+  }, [youStyle])
 
   const addItem = (kind, label, clear) => {
     const t = (label || '').trim()
@@ -1079,7 +1116,7 @@ function App() {
 
   // Coins: earned by logging meals + your streak; spent in the shop.
   const coinsEarned = log.length * 5 + streak * 8
-  const coins = Math.max(0, coinsEarned - coinsSpent)
+  const coins = Math.max(0, coinsEarned + coinsBonus - coinsSpent)
 
   // "You" strength = long-term XP (daily consistency + feeding), nudged by recent food.
   const gains = log.slice(0, 20).reduce((s, e) => {
@@ -1155,6 +1192,45 @@ function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [totalProtein, todayGroup, xpDate, todayKey, hasTargets])
+
+  // ── Boxing mini-game: You vs Coach. Your strength = harder hits + more HP. Win → coins. ──
+  const startFight = () => {
+    const youMax = 95 + Math.round(youStrength / 4)
+    setFight({ youHp: youMax, coachHp: 125, youMax, coachMax: 125, msg: 'Ding ding 🔔 — fight!', over: false, won: false })
+  }
+  const fightMove = (move) => {
+    if (!fight || fight.over) return
+    const bonus = Math.floor(youStrength / 14)
+    let youHp = fight.youHp
+    let coachHp = fight.coachHp
+    let youBlock = false
+    let youDealt = 0
+    if (move === 'jab') youDealt = 8 + Math.floor(Math.random() * 7) + bonus
+    else if (move === 'hook') youDealt = Math.random() < 0.62 ? 16 + Math.floor(Math.random() * 11) + bonus * 2 : 0
+    else youBlock = true
+    coachHp = Math.max(0, coachHp - youDealt)
+    let msg = move === 'block' ? 'You guard up 🛡 ' : youDealt ? `You land a ${move} for ${youDealt}! ` : `Your ${move} whiffs! `
+    if (coachHp <= 0) {
+      setCoinsBonus((c) => c + 35)
+      setFight({ ...fight, coachHp: 0, over: true, won: true, msg: `${msg}KO! 🏆 You beat the coach — +35 🪙` })
+      return
+    }
+    const cm = Math.random()
+    let coachDealt = 0
+    if (cm < 0.5) coachDealt = 7 + Math.floor(Math.random() * 7)
+    else if (cm < 0.82) coachDealt = Math.random() < 0.72 ? 14 + Math.floor(Math.random() * 9) : 0
+    if (youBlock) coachDealt = Math.floor(coachDealt / 2)
+    youHp = Math.max(0, youHp - coachDealt)
+    msg += coachDealt ? `Coach counters for ${coachDealt}.` : 'Coach misses!'
+    if (youHp <= 0) {
+      setFight({ ...fight, youHp: 0, over: true, won: false, msg: `${msg} You got KO’d 💀 — train harder!` })
+      return
+    }
+    setFight({ ...fight, youHp, coachHp, msg })
+  }
+
+  // Highest build tier you've earned (can't fake a buffer look than your strength).
+  const earnedTier = [...YOU_TIERS].reverse().find((t) => youStrength >= t.need) || YOU_TIERS[0]
 
   // ── Welcome / intro splash (before sign-in) ──
   if (authChecked && !user && showWelcome) {
@@ -1366,6 +1442,18 @@ function App() {
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 border border-amber-500/25 bg-amber-500/5 hover:border-amber-500/50 rounded-full px-3 py-1.5 transition-colors"
           >
             🛒 {coins}
+          </button>
+          <button
+            type="button" onClick={() => { startFight(); setShowFight(true) }}
+            className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-white/10 hover:border-red-500/50 rounded-full px-3 py-1.5 transition-colors"
+          >
+            🥊 Fight
+          </button>
+          <button
+            type="button" onClick={() => setShowYouEdit(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-white/10 hover:border-green-500/50 rounded-full px-3 py-1.5 transition-colors"
+          >
+            🧍 You
           </button>
           <button
             type="button" onClick={() => setShowCustomize(true)}
@@ -1961,7 +2049,15 @@ function App() {
       {!showCoach && (
         <div
           className={`you-char${strongerThanCoach ? ' yc-swole' : ''}${softness > 0.6 ? ' yc-sad' : ''}${playEmote ? ' yc-play' : ''}${feed?.who === 'you' ? ' ch-eat' : ''}`}
-          style={{ '--bulk': bulk, '--soft': softness, '--htscale': heightScale }}
+          style={{
+            '--bulk': bulk,
+            '--soft': softness,
+            '--htscale': heightScale,
+            '--yc-skin': YOU_COLORS[youStyle.color].skin,
+            '--yc-dark': YOU_COLORS[youStyle.color].dark,
+            '--yc-shade': YOU_COLORS[youStyle.color].shade,
+            '--yc-line': YOU_COLORS[youStyle.color].line,
+          }}
           aria-hidden="true"
         >
           <span className="yc-tip">You · {youMood}</span>
@@ -1971,38 +2067,42 @@ function App() {
             {/* Same proportions as the coach. Buff body (arms + abs) fades in with --bulk; belly grows with --soft. Bare-chested — no shirt. */}
             <svg viewBox="0 0 72 100" className="w-full h-full overflow-visible">
               {/* thick legs + shoes */}
-              <path d="M24 64 Q24 80 28 85 L33 85 Q34 72 34 64 Z" fill="#caa078" />
-              <path d="M48 64 Q48 80 44 85 L39 85 Q38 72 38 64 Z" fill="#caa078" />
+              <path d="M24 64 Q24 80 28 85 L33 85 Q34 72 34 64 Z" fill="var(--yc-dark)" />
+              <path d="M48 64 Q48 80 44 85 L39 85 Q38 72 38 64 Z" fill="var(--yc-dark)" />
               <ellipse cx="29" cy="86" rx="7" ry="3" fill="#ffffff" />
               <ellipse cx="43" cy="86" rx="7" ry="3" fill="#ffffff" />
               {/* shorts */}
               <path d="M22 58 Q36 64 50 58 L48 66 Q36 70 24 66 Z" fill="#334155" />
               {/* base (soft) body: skinny arms + bare belly */}
-              <circle cx="18" cy="41" r="6.5" fill="#e3b483" />
-              <rect x="13.5" y="44" width="6.5" height="12" rx="3.2" fill="#e3b483" />
-              <circle cx="54" cy="41" r="6.5" fill="#e3b483" />
-              <rect x="52" y="44" width="6.5" height="12" rx="3.2" fill="#e3b483" />
-              <ellipse className="yc-belly" cx="36" cy="47" rx="15.5" ry="14" fill="#e3b483" />
+              <circle cx="18" cy="41" r="6.5" fill="var(--yc-skin)" />
+              <rect x="13.5" y="44" width="6.5" height="12" rx="3.2" fill="var(--yc-skin)" />
+              <circle cx="54" cy="41" r="6.5" fill="var(--yc-skin)" />
+              <rect x="52" y="44" width="6.5" height="12" rx="3.2" fill="var(--yc-skin)" />
+              <ellipse className="yc-belly" cx="36" cy="47" rx="15.5" ry="14" fill="var(--yc-skin)" />
               {/* buff coach-like overlay — big arms, V-taper, pecs & abs (fades in with --bulk) */}
               <g className="yc-muscle">
-                <circle cx="15" cy="40" r="9" fill="#e3b483" />
-                <circle cx="13" cy="38" r="2.6" fill="#caa06a" />
-                <rect x="10" y="44" width="8.5" height="13" rx="4" fill="#e3b483" />
-                <circle cx="57" cy="40" r="9" fill="#e3b483" />
-                <circle cx="59" cy="38" r="2.6" fill="#caa06a" />
-                <rect x="53.5" y="44" width="8.5" height="13" rx="4" fill="#e3b483" />
-                <path d="M18 32 Q36 26 54 32 L46 60 Q36 64 26 60 Z" fill="#e3b483" />
-                <ellipse cx="29" cy="38" rx="7" ry="5" fill="#d49a64" />
-                <ellipse cx="43" cy="38" rx="7" ry="5" fill="#d49a64" />
-                <path d="M36 42 L36 58" stroke="#c98a52" strokeWidth="1.4" />
-                <path d="M30 46 H42 M30 51 H42 M31 56 H41" stroke="#c98a52" strokeWidth="1.2" opacity="0.7" />
+                <circle cx="15" cy="40" r="9" fill="var(--yc-skin)" />
+                <circle cx="13" cy="38" r="2.6" fill="var(--yc-shade)" />
+                <rect x="10" y="44" width="8.5" height="13" rx="4" fill="var(--yc-skin)" />
+                <circle cx="57" cy="40" r="9" fill="var(--yc-skin)" />
+                <circle cx="59" cy="38" r="2.6" fill="var(--yc-shade)" />
+                <rect x="53.5" y="44" width="8.5" height="13" rx="4" fill="var(--yc-skin)" />
+                <path d="M18 32 Q36 26 54 32 L46 60 Q36 64 26 60 Z" fill="var(--yc-skin)" />
+                <ellipse cx="29" cy="38" rx="7" ry="5" fill="var(--yc-shade)" />
+                <ellipse cx="43" cy="38" rx="7" ry="5" fill="var(--yc-shade)" />
+                <path d="M36 42 L36 58" stroke="var(--yc-line)" strokeWidth="1.4" />
+                <path d="M30 46 H42 M30 51 H42 M31 56 H41" stroke="var(--yc-line)" strokeWidth="1.2" opacity="0.7" />
               </g>
               {/* head */}
-              <circle cx="36" cy="19" r="9" fill="#e3b483" />
+              <circle cx="36" cy="19" r="9" fill="var(--yc-skin)" />
               <circle cx="32.5" cy="18.5" r="1.4" fill="#0c1a12" />
               <circle cx="39.5" cy="18.5" r="1.4" fill="#0c1a12" />
               <path className="yc-smile" d="M32 24 Q36 27 40 24" stroke="#0c1a12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
               <path className="yc-frown" d="M32 26 Q36 23 40 26" stroke="#0c1a12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+              {youStyle.accessory === 'cap' && (<g><path d="M27 13.5 Q36 4.5 45 13.5 L45 15 L27 15 Z" fill="#1f2937" /><rect x="43.5" y="13.4" width="8.5" height="2.6" rx="1.3" fill="#111827" /></g>)}
+              {youStyle.accessory === 'headband' && (<><rect x="26.5" y="12.6" width="19" height="3.6" rx="1.8" fill="#3b82f6" /><rect x="44" y="13" width="7" height="2.6" rx="1.3" fill="#3b82f6" transform="rotate(22 44 14)" /></>)}
+              {youStyle.accessory === 'shades' && (<g><rect x="28.3" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" /><rect x="36.7" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" /><rect x="35.3" y="17" width="1.4" height="1.6" fill="#0b0f14" /></g>)}
+              {youStyle.accessory === 'chain' && (<g><path d="M30 29 Q36 35.5 42 29" stroke="#f5c542" strokeWidth="1.8" fill="none" /><circle cx="36" cy="34" r="2" fill="#f5c542" /></g>)}
             </svg>
           </span>
         </div>
@@ -2115,6 +2215,96 @@ function App() {
             <p className="text-[11px] text-gray-500 mt-4 text-center leading-relaxed">
               Earn 🪙 by logging meals &amp; keeping your streak. Feed <b className="text-green-400">protein</b> to grow — stay consistent and you'll out‑lift your coach 👑
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Boxing mini-game ── */}
+      {showFight && fight && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowFight(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-white/10 bg-[#12151b] p-5 animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-medium flex items-center gap-2">🥊 You vs Coach</h3>
+              <button type="button" onClick={() => setShowFight(false)} aria-label="Close" className="text-gray-500 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="flex items-stretch gap-3 mb-3">
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-xs mb-1"><span className="text-white font-medium">🧍 You</span><span className="text-gray-400">{fight.youHp}/{fight.youMax}</span></div>
+                <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-green-600 to-green-400 transition-all" style={{ width: `${(fight.youHp / fight.youMax) * 100}%` }} /></div>
+              </div>
+              <span className="self-center text-gray-500 text-xs">VS</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-xs mb-1"><span className="text-gray-400">{fight.coachHp}/{fight.coachMax}</span><span className="text-white font-medium">Coach 🥑</span></div>
+                <div className="h-2 rounded-full bg-white/[0.08] overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-400 ml-auto transition-all" style={{ width: `${(fight.coachHp / fight.coachMax) * 100}%` }} /></div>
+              </div>
+            </div>
+            <div className="text-center text-6xl my-1 select-none">{fight.over ? (fight.won ? '🏆' : '💀') : '🥊'}</div>
+            <p className="text-center text-sm text-gray-200 min-h-[2.5rem] mb-3">{fight.msg}</p>
+            {fight.over ? (
+              <div className="flex gap-2">
+                <button type="button" onClick={startFight} className="flex-1 bg-green-500 text-[#08090a] rounded-lg py-2.5 text-sm font-semibold hover:bg-green-400">Rematch</button>
+                <button type="button" onClick={() => setShowFight(false)} className="flex-1 border border-white/15 text-gray-200 rounded-lg py-2.5 text-sm hover:border-green-500/50">Done</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" onClick={() => fightMove('jab')} className="rounded-lg py-2.5 text-sm font-semibold bg-green-500 text-[#08090a] hover:bg-green-400">👊 Jab</button>
+                <button type="button" onClick={() => fightMove('hook')} className="rounded-lg py-2.5 text-sm font-semibold bg-amber-500 text-[#08090a] hover:bg-amber-400">🥊 Hook</button>
+                <button type="button" onClick={() => fightMove('block')} className="rounded-lg py-2.5 text-sm font-semibold border border-white/15 text-gray-200 hover:border-green-500/50">🛡 Block</button>
+              </div>
+            )}
+            <p className="text-[11px] text-gray-500 mt-3 text-center">Jab = safe · Hook = big but can miss · Block = halve the next hit. Your 💪 strength ({youStrength}) makes you hit harder!</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit "You" modal ── */}
+      {showYouEdit && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowYouEdit(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#12151b] p-5 animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-medium flex items-center gap-2">🧍 Edit you</h3>
+              <button type="button" onClick={() => setShowYouEdit(false)} aria-label="Close" className="text-gray-500 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <label className="text-xs text-gray-400">Skin / color</label>
+            <div className="flex flex-wrap gap-2 mt-1.5 mb-4">
+              {Object.entries(YOU_COLORS).map(([k, c]) => (
+                <button key={k} type="button" onClick={() => setYouStyle((s) => ({ ...s, color: k }))} aria-label={k}
+                  className={`h-8 w-8 rounded-full transition ${youStyle.color === k ? 'ring-2 ring-white' : 'ring-1 ring-white/20 hover:ring-white/50'}`}
+                  style={{ background: c.skin }} />
+              ))}
+            </div>
+            <label className="text-xs text-gray-400">Accessory</label>
+            <div className="grid grid-cols-5 gap-1.5 mt-1.5 mb-4">
+              {COACH_ACCESSORIES.map((a) => (
+                <button key={a} type="button" onClick={() => setYouStyle((s) => ({ ...s, accessory: a }))}
+                  className={`rounded-lg py-1.5 text-[11px] capitalize border transition ${youStyle.accessory === a ? 'bg-green-500 text-[#08090a] border-green-500 font-semibold' : 'bg-[#0f131a] text-gray-300 border-white/10 hover:border-green-500/40'}`}>
+                  {a}
+                </button>
+              ))}
+            </div>
+            <label className="text-xs text-gray-400">Build — earn it, you can't fake it 💪</label>
+            <div className="grid grid-cols-1 gap-1.5 mt-1.5">
+              {YOU_TIERS.map((t) => {
+                const unlocked = youStrength >= t.need
+                const current = earnedTier.key === t.key
+                return (
+                  <button
+                    key={t.key} type="button"
+                    onClick={() => {
+                      if (!unlocked) {
+                        setFeed({ who: 'you', text: `keep training 💪 (${t.need - youStrength} more)` })
+                        setTimeout(() => setFeed(null), 2600)
+                      }
+                    }}
+                    className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs border transition ${current ? 'bg-green-500/15 border-green-500/40 text-green-300 font-semibold' : unlocked ? 'bg-[#0f131a] border-white/10 text-gray-300' : 'bg-[#0f131a] border-white/5 text-gray-600'}`}
+                  >
+                    <span>{t.label}{current ? ' ✓ (you now)' : ''}</span>
+                    <span>{unlocked ? '🔓 earned' : '🔒 keep training'}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-4 text-center">Color &amp; accessory are free. Your <b className="text-green-400">build is earned</b> by staying on track — strength {youStrength}/{COACH_STRENGTH}.</p>
           </div>
         </div>
       )}
