@@ -60,6 +60,20 @@ const COACH_ACCESSORIES = ['none', 'cap', 'headband', 'shades', 'chain']
 const COACH_BUILDS = ['slim', 'normal', 'buff', 'round']
 const DEFAULT_COACH_STYLE = { color: 'emerald', accessory: 'none', build: 'buff' }
 
+// Coach's fixed strength. Stay consistent (~a year of daily wins + feeding) to pass it.
+const COACH_STRENGTH = 300
+// Shop — buy with coins (earned by logging), then feed the coach or "You".
+const SHOP = [
+  { id: 'fruit', name: 'Fruit', emoji: '🍎', cost: 5, xp: 2, react: 'Yum! 😋' },
+  { id: 'salad', name: 'Salad', emoji: '🥗', cost: 8, xp: 3, react: 'So fresh 😎' },
+  { id: 'shake', name: 'Protein Shake', emoji: '🥤', cost: 12, xp: 4, react: 'Gains incoming 💪' },
+  { id: 'powder', name: 'Protein Powder', emoji: '🥛', cost: 20, xp: 6, react: 'LESSGOO 🔥' },
+  { id: 'egg', name: 'Eggs', emoji: '🥚', cost: 7, xp: 3, react: 'Thank you 🙏' },
+  { id: 'burger', name: 'Big Mac', emoji: '🍔', cost: 6, xp: -4, react: 'Ugh… junk 🤢' },
+  { id: 'fries', name: 'Fries', emoji: '🍟', cost: 4, xp: -3, react: 'that’s mid 💀' },
+  { id: 'soda', name: 'Soda', emoji: '🥤', cost: 3, xp: -3, react: 'so much sugar 😵' },
+]
+
 function loadCoachStyle() {
   try {
     return { ...DEFAULT_COACH_STYLE, ...(JSON.parse(localStorage.getItem('bodymind_coach_style')) || {}) }
@@ -144,6 +158,13 @@ function App() {
   const [coachStyle, setCoachStyle] = useState(loadCoachStyle) // color / accessory / build
   const [showCustomize, setShowCustomize] = useState(false)
   const [playEmote, setPlayEmote] = useState(false) // the two characters "play" together
+  const [showShop, setShowShop] = useState(false)
+  const [coinsSpent, setCoinsSpent] = useState(() => Number(localStorage.getItem('bodymind_coins_spent')) || 0)
+  const [youXP, setYouXP] = useState(() => Number(localStorage.getItem('bodymind_you_xp')) || 0) // long-term strength
+  const [xpDate, setXpDate] = useState(() => localStorage.getItem('bodymind_xp_date') || '')
+  const [feed, setFeed] = useState(null) // { who: 'you'|'coach', text } — speech bubble
+  const fullRef = useRef({ count: 0, last: 0 })
+  const prevLogLen = useRef(0)
   const [showWeigh, setShowWeigh] = useState(false)
   const [weighInput, setWeighInput] = useState('')
   const [showPlan, setShowPlan] = useState(false)
@@ -609,6 +630,17 @@ function App() {
     return () => clearInterval(id)
   }, [])
 
+  // Persist shop coins spent + long-term strength.
+  useEffect(() => {
+    try { localStorage.setItem('bodymind_coins_spent', String(coinsSpent)) } catch { /* ignore */ }
+  }, [coinsSpent])
+  useEffect(() => {
+    try { localStorage.setItem('bodymind_you_xp', String(youXP)) } catch { /* ignore */ }
+  }, [youXP])
+  useEffect(() => {
+    try { localStorage.setItem('bodymind_xp_date', xpDate) } catch { /* ignore */ }
+  }, [xpDate])
+
   const addItem = (kind, label, clear) => {
     const t = (label || '').trim()
     if (!t) return
@@ -708,8 +740,8 @@ function App() {
   }
 
   // ── Roaming mascot: he walks on his own; grab + fling him to throw him. ──
-  const MC_W = 104
-  const MC_H = 146
+  const MC_W = 126
+  const MC_H = 178
   const groundY = () => window.innerHeight - MC_H - 10
 
   const onMascotDown = (e) => {
@@ -1045,15 +1077,32 @@ function App() {
   const calOver = hasTargets ? Math.max(0, netCalories - targets.calorieTarget) : 0
   const proOver = hasTargets && targets.proteinTarget ? Math.max(0, totalProtein - targets.proteinTarget) : 0
 
-  // "You" character physique, from your recent food: protein/exercise → buff, junk → soft/round.
+  // Coins: earned by logging meals + your streak; spent in the shop.
+  const coinsEarned = log.length * 5 + streak * 8
+  const coins = Math.max(0, coinsEarned - coinsSpent)
+
+  // "You" strength = long-term XP (daily consistency + feeding), nudged by recent food.
   const gains = log.slice(0, 20).reduce((s, e) => {
     if (e.kind === 'exercise') return s + (e.calories || 0) / 25 // workouts make you stronger
     return s + ((e.protein || 0) - (e.calories || 0) / 22) // food: protein good, big calories bad
   }, 0)
+  const youStrength = Math.round(youXP + Math.max(-25, Math.min(45, gains)))
+  const strongerThanCoach = youStrength >= COACH_STRENGTH
   const youBuild =
-    gains <= -22 ? 'fat' : gains < -4 ? 'soft' : gains < 18 ? 'normal' : gains < 55 ? 'fit' : 'buff'
-  const youMood =
-    youBuild === 'fat'
+    youStrength <= -8
+      ? 'fat'
+      : youStrength < 8
+        ? 'soft'
+        : youStrength < 35
+          ? 'normal'
+          : youStrength < 90
+            ? 'fit'
+            : strongerThanCoach
+              ? 'swole'
+              : 'buff'
+  const youMood = strongerThanCoach
+    ? 'STRONGER THAN COACH 👑'
+    : youBuild === 'fat'
       ? 'too much junk 🍔'
       : youBuild === 'soft'
         ? 'eat cleaner 😅'
@@ -1066,6 +1115,49 @@ function App() {
   const exItems = checklist.filter((i) => i.kind === 'exercise')
   const weightLb = profile?.weight_kg ? Math.round(Number(profile.weight_kg) / KG_PER_LB) : null
   const trendLb = trend != null ? Math.round(trend / KG_PER_LB) : null
+
+  // Feed an item to the coach or "You": spend coins, react, and (for You) change strength.
+  const feedCharacter = (item, who) => {
+    if (coins < item.cost) {
+      setFeed({ who, text: 'need more coins 💰' })
+      setTimeout(() => setFeed(null), 1800)
+      return
+    }
+    setCoinsSpent((c) => c + item.cost)
+    if (who === 'you') setYouXP((x) => Math.max(0, Math.round(x + item.xp)))
+    const now = Date.now()
+    const f = fullRef.current
+    f.count = now - f.last < 5000 ? f.count + 1 : 1
+    f.last = now
+    setFeed({ who, text: f.count >= 4 ? "I'm full 😅" : item.react })
+    setTimeout(() => setFeed(null), 2400)
+  }
+
+  // React on the "You" character every time you log a real food.
+  useEffect(() => {
+    if (log.length > prevLogLen.current && prevLogLen.current !== 0) {
+      const newest = log[0]
+      if (newest && newest.kind !== 'exercise') {
+        const good = (newest.protein || 0) - (newest.calories || 0) / 22 > 0
+        setFeed({ who: 'you', text: good ? 'gains 💪' : 'oof 🍔' })
+        setTimeout(() => setFeed(null), 2000)
+      }
+    }
+    prevLogLen.current = log.length
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [log.length])
+
+  // A consistent day → permanent strength. Stay on track and you'll pass the coach.
+  useEffect(() => {
+    if (!hasTargets || !todayGroup || xpDate === todayKey) return
+    const hitProtein = targets.proteinTarget && totalProtein >= targets.proteinTarget
+    const goodDay = todayGroup.entries.filter((e) => e.kind !== 'exercise').length >= 3
+    if (hitProtein || goodDay) {
+      setYouXP((x) => x + 1)
+      setXpDate(todayKey)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalProtein, todayGroup, xpDate, todayKey, hasTargets])
 
   // ── Welcome / intro splash (before sign-in) ──
   if (authChecked && !user && showWelcome) {
@@ -1271,7 +1363,13 @@ function App() {
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          {user && <span className="hidden sm:inline text-xs text-gray-400 max-w-[150px] truncate">{user}</span>}
+          {user && <span className="hidden sm:inline text-xs text-gray-400 max-w-[120px] truncate">{user}</span>}
+          <button
+            type="button" onClick={() => setShowShop(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 border border-amber-500/25 bg-amber-500/5 hover:border-amber-500/50 rounded-full px-3 py-1.5 transition-colors"
+          >
+            🛒 {coins}
+          </button>
           <button
             type="button" onClick={() => setShowCustomize(true)}
             className="inline-flex items-center gap-1.5 text-xs text-gray-300 hover:text-white border border-white/10 hover:border-green-500/50 rounded-full px-3 py-1.5 transition-colors"
@@ -1760,7 +1858,7 @@ function App() {
             }
           }}
           aria-label="Chat with Coach Remy (drag to throw)"
-          className={`roaming-coach rc-${coachMode} cc-build-${coachStyle.build}${nearCoach ? ' rc-swinging' : ''}${playEmote ? ' rc-play' : ''}`}
+          className={`roaming-coach rc-${coachMode} cc-build-${coachStyle.build}${nearCoach ? ' rc-swinging' : ''}${playEmote ? ' rc-play' : ''}${feed?.who === 'coach' ? ' ch-eat' : ''}`}
           style={{
             '--cc-body': COACH_COLORS[coachStyle.color].body,
             '--cc-shade': COACH_COLORS[coachStyle.color].shade,
@@ -1769,6 +1867,7 @@ function App() {
           }}
         >
           <span className="rc-emote">{playEmote ? '💚' : ''}</span>
+          {feed?.who === 'coach' && <span className="char-speech">{feed.text}</span>}
           <span className="rc-tip">{nearCoach ? 'Back off! 🏋️' : 'Throw me · tap to chat'}</span>
           <span className="rc-aura" />
           <span className="rc-face">
@@ -1863,9 +1962,10 @@ function App() {
 
       {/* ── "You" character — physique reflects your food ── */}
       {!showCoach && (
-        <div className={`you-char yc-${youBuild}${playEmote ? ' yc-play' : ''}`} aria-hidden="true">
+        <div className={`you-char yc-${youBuild}${playEmote ? ' yc-play' : ''}${feed?.who === 'you' ? ' ch-eat' : ''}`} aria-hidden="true">
           <span className="yc-tip">You · {youMood}</span>
           <span className="yc-emote">{playEmote ? '🤝' : ''}</span>
+          {feed?.who === 'you' && <span className="char-speech">{feed.text}</span>}
           <span className="yc-bob">
             <svg viewBox="0 0 64 90" className="w-full h-full">
               <rect x="22" y="62" width="8" height="20" rx="3" fill="#caa078" />
@@ -1959,6 +2059,45 @@ function App() {
             </div>
 
             <p className="text-[11px] text-gray-500 mt-4 text-center">Your “You” buddy's build changes with what you eat 🍎💪</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Shop modal ── */}
+      {showShop && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowShop(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md max-h-[85svh] overflow-y-auto rounded-2xl border border-white/10 bg-[#12151b] p-5 animate-fade-in">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-white font-medium flex items-center gap-2">🛒 Shop &amp; feed</h3>
+              <button type="button" onClick={() => setShowShop(false)} aria-label="Close" className="text-gray-500 hover:text-white"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="flex items-center justify-between mb-4 text-[11px]">
+              <span className="text-amber-300 font-semibold">🪙 {coins} coins</span>
+              <span className={strongerThanCoach ? 'text-green-400 font-semibold' : 'text-gray-500'}>
+                💪 You {youStrength}/{COACH_STRENGTH}{strongerThanCoach ? ' · 👑 stronger than coach!' : ''}
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-4">
+              <div className="bar-fill h-full rounded-full bg-gradient-to-r from-green-600 to-green-400" style={{ width: `${Math.min(100, Math.max(0, Math.round((youStrength / COACH_STRENGTH) * 100)))}%` }} />
+            </div>
+            <div className="flex flex-col gap-2">
+              {SHOP.map((item) => (
+                <div key={item.id} className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#0f131a] p-2.5">
+                  <span className="text-2xl shrink-0">{item.emoji}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-white font-medium leading-tight">{item.name}</div>
+                    <div className="text-[11px] text-gray-500">🪙 {item.cost} · <span className={item.xp >= 0 ? 'text-green-400' : 'text-red-400'}>{item.xp >= 0 ? `+${item.xp}` : item.xp} 💪</span></div>
+                  </div>
+                  <button type="button" onClick={() => feedCharacter(item, 'you')} disabled={coins < item.cost}
+                    className="shrink-0 text-[11px] rounded-lg px-2.5 py-1.5 bg-green-500 text-[#08090a] font-semibold disabled:opacity-30 hover:bg-green-400 transition">Feed You</button>
+                  <button type="button" onClick={() => feedCharacter(item, 'coach')} disabled={coins < item.cost}
+                    className="shrink-0 text-[11px] rounded-lg px-2.5 py-1.5 border border-white/15 text-gray-200 disabled:opacity-30 hover:border-green-500/50 transition">Feed Coach</button>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-500 mt-4 text-center leading-relaxed">
+              Earn 🪙 by logging meals &amp; keeping your streak. Feed <b className="text-green-400">protein</b> to grow — stay consistent and you'll out‑lift your coach 👑
+            </p>
           </div>
         </div>
       )}

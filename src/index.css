@@ -176,8 +176,8 @@ body {
   bottom: max(0.75rem, env(safe-area-inset-bottom));
   left: 1rem;
   z-index: 40;
-  width: 104px;
-  height: 146px;
+  width: 126px;
+  height: 178px;
   padding: 0;
   border: none;
   background: transparent;
@@ -211,8 +211,10 @@ body {
   width: 150%;
   height: 150%;
   transform: translate(-50%, -50%);
+  width: 165%;
+  height: 165%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(47, 158, 110, 0.28), rgba(47, 158, 110, 0.12) 55%, transparent 72%);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.72), rgba(12, 10, 20, 0.45) 50%, transparent 74%);
   filter: blur(3px);
   z-index: -1;
   pointer-events: none;
@@ -418,4 +420,51 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .you-char, .yc-bob { animation: none; }
+}
+
+/* ── Swole: stronger than the coach — bigger + glowing + ripped ── */
+.you-char.yc-swole { width: 150px; height: 210px; }
+.you-char.yc-swole .yc-belly { transform: scale(0.78); }
+.you-char.yc-swole .yc-muscle { opacity: 1; }
+.you-char.yc-swole .yc-bob {
+  filter: drop-shadow(0 0 9px rgba(245, 197, 66, 0.55)) drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45));
+}
+
+/* ── Feed reactions: speech bubble + a little chomp ── */
+.char-speech {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  background: #ffffff;
+  color: #101a14;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.6);
+  z-index: 6;
+  pointer-events: none;
+  animation: speech-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.char-speech::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #ffffff;
+}
+@keyframes speech-pop {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.7); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+.ch-eat .rc-figure,
+.ch-eat .yc-bob { animation: eat-bounce 0.42s ease-in-out 2 !important; }
+@keyframes eat-bounce {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.13); }
 }
