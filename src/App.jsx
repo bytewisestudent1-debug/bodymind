@@ -1968,25 +1968,41 @@ function App() {
           <span className="yc-emote">{playEmote ? '🤝' : ''}</span>
           {feed?.who === 'you' && <span className="char-speech">{feed.text}</span>}
           <span className="yc-bob">
-            <svg viewBox="0 0 64 90" className="w-full h-full">
-              <rect x="22" y="62" width="8" height="20" rx="3" fill="#caa078" />
-              <rect x="34" y="62" width="8" height="20" rx="3" fill="#caa078" />
-              <ellipse cx="26" cy="84" rx="6" ry="2.6" fill="#ffffff" />
-              <ellipse cx="38" cy="84" rx="6" ry="2.6" fill="#ffffff" />
-              <path d="M20 56 Q32 62 44 56 L42 64 Q32 68 22 64 Z" fill="#334155" />
-              <rect x="11" y="36" width="7" height="17" rx="3.5" fill="#e3b483" />
-              <rect x="46" y="36" width="7" height="17" rx="3.5" fill="#e3b483" />
-              <ellipse className="yc-belly" cx="32" cy="46" rx="15" ry="14" fill="#e3b483" />
+            {/* Same proportions as the coach. Buff body (arms + abs) fades in with --bulk; belly grows with --soft. Bare-chested — no shirt. */}
+            <svg viewBox="0 0 72 100" className="w-full h-full overflow-visible">
+              {/* thick legs + shoes */}
+              <path d="M24 64 Q24 80 28 85 L33 85 Q34 72 34 64 Z" fill="#caa078" />
+              <path d="M48 64 Q48 80 44 85 L39 85 Q38 72 38 64 Z" fill="#caa078" />
+              <ellipse cx="29" cy="86" rx="7" ry="3" fill="#ffffff" />
+              <ellipse cx="43" cy="86" rx="7" ry="3" fill="#ffffff" />
+              {/* shorts */}
+              <path d="M22 58 Q36 64 50 58 L48 66 Q36 70 24 66 Z" fill="#334155" />
+              {/* base (soft) body: skinny arms + bare belly */}
+              <circle cx="18" cy="41" r="6.5" fill="#e3b483" />
+              <rect x="13.5" y="44" width="6.5" height="12" rx="3.2" fill="#e3b483" />
+              <circle cx="54" cy="41" r="6.5" fill="#e3b483" />
+              <rect x="52" y="44" width="6.5" height="12" rx="3.2" fill="#e3b483" />
+              <ellipse className="yc-belly" cx="36" cy="47" rx="15.5" ry="14" fill="#e3b483" />
+              {/* buff coach-like overlay — big arms, V-taper, pecs & abs (fades in with --bulk) */}
               <g className="yc-muscle">
-                <ellipse cx="26" cy="42" rx="5.5" ry="4" fill="#d49a64" />
-                <ellipse cx="38" cy="42" rx="5.5" ry="4" fill="#d49a64" />
-                <path d="M32 47 L32 56" stroke="#c98a52" strokeWidth="1.2" />
+                <circle cx="15" cy="40" r="9" fill="#e3b483" />
+                <circle cx="13" cy="38" r="2.6" fill="#caa06a" />
+                <rect x="10" y="44" width="8.5" height="13" rx="4" fill="#e3b483" />
+                <circle cx="57" cy="40" r="9" fill="#e3b483" />
+                <circle cx="59" cy="38" r="2.6" fill="#caa06a" />
+                <rect x="53.5" y="44" width="8.5" height="13" rx="4" fill="#e3b483" />
+                <path d="M18 32 Q36 26 54 32 L46 60 Q36 64 26 60 Z" fill="#e3b483" />
+                <ellipse cx="29" cy="38" rx="7" ry="5" fill="#d49a64" />
+                <ellipse cx="43" cy="38" rx="7" ry="5" fill="#d49a64" />
+                <path d="M36 42 L36 58" stroke="#c98a52" strokeWidth="1.4" />
+                <path d="M30 46 H42 M30 51 H42 M31 56 H41" stroke="#c98a52" strokeWidth="1.2" opacity="0.7" />
               </g>
-              <circle cx="32" cy="22" r="9" fill="#e3b483" />
-              <circle cx="29" cy="21" r="1.3" fill="#0c1a12" />
-              <circle cx="35" cy="21" r="1.3" fill="#0c1a12" />
-              <path className="yc-smile" d="M29 25.5 Q32 28.5 35 25.5" stroke="#0c1a12" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-              <path className="yc-frown" d="M29 27 Q32 24.5 35 27" stroke="#0c1a12" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+              {/* head */}
+              <circle cx="36" cy="19" r="9" fill="#e3b483" />
+              <circle cx="32.5" cy="18.5" r="1.4" fill="#0c1a12" />
+              <circle cx="39.5" cy="18.5" r="1.4" fill="#0c1a12" />
+              <path className="yc-smile" d="M32 24 Q36 27 40 24" stroke="#0c1a12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+              <path className="yc-frown" d="M32 26 Q36 23 40 26" stroke="#0c1a12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
             </svg>
           </span>
         </div>

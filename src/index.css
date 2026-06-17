@@ -378,18 +378,16 @@ body {
   transform: scale(calc(0.62 + var(--soft, 0) * 0.82));
   transition: transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
 }
+/* the coach-like buff body (big arms, V-taper, pecs, abs) fades in as you bulk up */
 .yc-muscle {
   opacity: var(--bulk, 0);
-  transform-box: fill-box;
-  transform-origin: center;
-  transform: scale(calc(0.58 + var(--bulk, 0) * 0.82));
-  transition: opacity 1s ease, transform 1s ease;
+  transition: opacity 1.1s ease;
 }
-/* width grows with fat OR muscle; height (scaleY) tracks the user's real height */
+/* fat widens the frame; height (scaleY) tracks the user's real height */
 .yc-bob > svg {
-  transform: scaleX(calc(0.88 + var(--bulk, 0) * 0.34 + var(--soft, 0) * 0.3)) scaleY(var(--htscale, 1));
+  transform: scaleX(calc(1 + var(--bulk, 0) * 0.06 + var(--soft, 0) * 0.28)) scaleY(var(--htscale, 1));
   transform-origin: center bottom;
-  transition: transform 1s ease;
+  transition: transform 1.1s ease;
 }
 .yc-smile, .yc-frown { transition: opacity 0.3s; }
 .yc-frown { opacity: 0; }
