@@ -409,8 +409,8 @@ body {
 }
 .yc-smile, .yc-frown { transition: opacity 0.3s; }
 .yc-frown { opacity: 0; }
-.you-char.yc-sad .yc-smile { opacity: 0; }
-.you-char.yc-sad .yc-frown { opacity: 1; }
+.yc-sad .yc-smile { opacity: 0; }
+.yc-sad .yc-frown { opacity: 1; }
 
 .yc-tip {
   position: absolute;

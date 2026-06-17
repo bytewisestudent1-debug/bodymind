@@ -2292,6 +2292,45 @@ function App() {
               <h3 className="text-white font-medium flex items-center gap-2">🧍 Edit you</h3>
               <button type="button" onClick={() => setShowYouEdit(false)} aria-label="Close" className="text-gray-500 hover:text-white"><X className="h-5 w-5" /></button>
             </div>
+
+            {/* live preview of YOUR character (reflects your earned build) */}
+            <div
+              className={`flex justify-center mb-4${softness > 0.6 ? ' yc-sad' : ''}`}
+              style={{
+                '--bulk': bulk,
+                '--soft': softness,
+                '--yc-skin': YOU_COLORS[youStyle.color].skin,
+                '--yc-dark': YOU_COLORS[youStyle.color].dark,
+                '--yc-shade': YOU_COLORS[youStyle.color].shade,
+                '--yc-line': YOU_COLORS[youStyle.color].line,
+              }}
+            >
+              <svg viewBox="0 0 72 100" className="h-36 overflow-visible">
+                <g className="yc-leg-l"><rect x="26" y="61" width="7" height="23" rx="3.2" fill="var(--yc-skin)" /></g>
+                <g className="yc-leg-r"><rect x="39" y="61" width="7" height="23" rx="3.2" fill="var(--yc-skin)" /></g>
+                <ellipse cx="29.5" cy="85" rx="6" ry="2.6" fill="#ffffff" />
+                <ellipse cx="42.5" cy="85" rx="6" ry="2.6" fill="#ffffff" />
+                <path d="M23 56 Q36 62 49 56 L47 64 Q36 68 25 64 Z" fill="#334155" />
+                <ellipse className="yc-belly" cx="36" cy="47" rx="13.5" ry="13" fill="var(--yc-skin)" />
+                <g className="yc-torso"><path d="M23 33 Q36 29 49 33 L46 58 Q36 61 26 58 Z" fill="var(--yc-skin)" /></g>
+                <g className="yc-abs">
+                  <path d="M36 41 L36 56" stroke="var(--yc-line)" strokeWidth="1.1" strokeLinecap="round" />
+                  <path d="M31 46 H41 M31 50 H41 M32 54 H40" stroke="var(--yc-line)" strokeWidth="0.9" strokeLinecap="round" />
+                </g>
+                <g className="yc-arm-l"><circle cx="19" cy="37" r="5.5" fill="var(--yc-skin)" /><rect x="15" y="40" width="7" height="15" rx="3.5" fill="var(--yc-skin)" /></g>
+                <g className="yc-arm-r"><circle cx="53" cy="37" r="5.5" fill="var(--yc-skin)" /><rect x="50" y="40" width="7" height="15" rx="3.5" fill="var(--yc-skin)" /></g>
+                <circle cx="36" cy="19" r="9" fill="var(--yc-skin)" />
+                <circle cx="32.5" cy="18.5" r="1.4" fill="#0c1a12" />
+                <circle cx="39.5" cy="18.5" r="1.4" fill="#0c1a12" />
+                <path className="yc-smile" d="M32 24 Q36 27 40 24" stroke="#0c1a12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                <path className="yc-frown" d="M32 26 Q36 23 40 26" stroke="#0c1a12" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                {youStyle.accessory === 'cap' && (<g><path d="M27 13.5 Q36 4.5 45 13.5 L45 15 L27 15 Z" fill="#1f2937" /><rect x="43.5" y="13.4" width="8.5" height="2.6" rx="1.3" fill="#111827" /></g>)}
+                {youStyle.accessory === 'headband' && (<><rect x="26.5" y="12.6" width="19" height="3.6" rx="1.8" fill="#3b82f6" /><rect x="44" y="13" width="7" height="2.6" rx="1.3" fill="#3b82f6" transform="rotate(22 44 14)" /></>)}
+                {youStyle.accessory === 'shades' && (<g><rect x="28.3" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" /><rect x="36.7" y="15.8" width="7" height="4.8" rx="1.4" fill="#0b0f14" /><rect x="35.3" y="17" width="1.4" height="1.6" fill="#0b0f14" /></g>)}
+                {youStyle.accessory === 'chain' && (<g><path d="M30 29 Q36 35.5 42 29" stroke="#f5c542" strokeWidth="1.8" fill="none" /><circle cx="36" cy="34" r="2" fill="#f5c542" /></g>)}
+              </svg>
+            </div>
+
             <label className="text-xs text-gray-400">Skin / color</label>
             <div className="flex flex-wrap gap-2 mt-1.5 mb-4">
               {Object.entries(YOU_COLORS).map(([k, c]) => (
